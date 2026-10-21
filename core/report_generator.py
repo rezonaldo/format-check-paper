@@ -69,7 +69,8 @@ def generate_word_report(
     meta_p = doc.add_paragraph()
     meta_p.paragraph_format.space_after = Pt(14)
     meta_p.add_run("Manuscript Name: ").bold = True
-    meta_p.add_run(f"{os.path.basename(metadata.filename)}\n")
+    display_name = os.path.basename(metadata.filename) if metadata.filename else "manuscript.pdf"
+    meta_p.add_run(f"{display_name}\n")
     meta_p.add_run("Page Count / Size: ").bold = True
     meta_p.add_run(f"{metadata.total_pages} pages ({metadata.paper_size_name})\n")
     meta_p.add_run("Total Items to Revise: ").bold = True
