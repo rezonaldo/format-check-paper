@@ -139,3 +139,4 @@ def validate_manuscript_eligibility(doc: pymupdf.Document, filename: str = "") -
         "score": score,
         "total_pages": total_pages
     }
+
