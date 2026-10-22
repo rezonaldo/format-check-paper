@@ -7,6 +7,7 @@ from colorama import init, Fore, Style
 from core.rules import IEEEComplianceChecker
 from core.highlighter import annotate_pdf
 from core.report_generator import generate_word_report, generate_excel_report
+from core.validator import validate_pdf_safety, validate_manuscript_eligibility
 
 init(autoreset=True)
 
@@ -32,8 +33,26 @@ def main():
     print(f"{Fore.CYAN}{'='*60}")
     print(f"File Target: {Style.BRIGHT}{args.pdf_path}")
     
+    # 1. File Safety & Integrity Check
+    with open(args.pdf_path, "rb") as f:
+        bytes_data = f.read()
+    ok_safety, msg_safety = validate_pdf_safety(bytes_data, args.pdf_path)
+    if not ok_safety:
+        print(f"\n{Fore.RED}[SECURITY REJECTED] {msg_safety}\n")
+        sys.exit(1)
+        
     # Open document
-    doc = pymupdf.open(args.pdf_path)
+    try:
+        doc = pymupdf.open(args.pdf_path)
+    except Exception:
+        print(f"\n{Fore.RED}[ERROR] Gagal membuka berkas PDF. Berkas mungkin korup.\n")
+        sys.exit(1)
+        
+    # 2. Gatekeeper: Academic Manuscript Eligibility Check
+    ok_eligibility, msg_eligibility, info = validate_manuscript_eligibility(doc, args.pdf_path)
+    if not ok_eligibility:
+        print(f"\n{Fore.RED}[BUKAN NASKAH PAPER] {msg_eligibility}\n")
+        sys.exit(1)
     
     # Run checker
     checker = IEEEComplianceChecker(

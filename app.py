@@ -7,6 +7,7 @@ import pandas as pd
 from core.rules import IEEEComplianceChecker
 from core.highlighter import annotate_pdf
 from core.report_generator import generate_word_report, generate_excel_report
+from core.validator import validate_pdf_safety, validate_manuscript_eligibility
 
 st.set_page_config(
     page_title="ICoDMI - IEEE Manuscript Format Checker",
@@ -83,12 +84,31 @@ st.markdown(f'<div class="sub-title">Sistem Pengecekan Presisi Format Naskah Fin
 uploaded_file = st.file_uploader("Unggah File Paper Final (PDF)", type=["pdf"], help="Drag and drop file PDF naskah di sini")
 
 if uploaded_file is not None:
+    file_bytes = uploaded_file.getvalue()
+    
+    # 1. File Safety & Integrity Check
+    ok_safety, msg_safety = validate_pdf_safety(file_bytes, uploaded_file.name)
+    if not ok_safety:
+        st.error(f"🛑 **Peringatan Keamanan Berkas:**\n\n{msg_safety}")
+        st.stop()
+        
     # Save uploaded file to temp directory
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(uploaded_file.getbuffer())
+        tmp_file.write(file_bytes)
         temp_input_path = tmp_file.name
 
-    doc = pymupdf.open(temp_input_path)
+    try:
+        doc = pymupdf.open(temp_input_path)
+    except Exception:
+        st.error("🛑 Gagal membaca file PDF. Berkas mungkin korup atau tidak valid.")
+        st.stop()
+
+    # 2. Gatekeeper: Academic Manuscript Eligibility Check
+    ok_eligibility, msg_eligibility, info = validate_manuscript_eligibility(doc, uploaded_file.name)
+    if not ok_eligibility:
+        st.warning(f"⚠️ **Berkas Bukan Naskah Paper Ilmiah:**\n\n{msg_eligibility}")
+        doc.close()
+        st.stop()
     
     with st.spinner("Sedang memindai kepatuhan template IEEE dan menghitung koordinat..."):
         checker = IEEEComplianceChecker(

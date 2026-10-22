@@ -18,6 +18,7 @@ import pymupdf
 from core.rules import IEEEComplianceChecker
 from core.highlighter import annotate_pdf
 from core.report_generator import generate_word_report
+from core.validator import validate_pdf_safety, validate_manuscript_eligibility
 
 app = FastAPI(title="IEEE Manuscript Compliance Checker API")
 
@@ -43,15 +44,28 @@ async def check_manuscript(
     conf_name: str = Form("ICoDMI 2026 (SSMI IPB)")
 ):
     if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+        raise HTTPException(status_code=400, detail="Hanya berkas berformat PDF (.pdf) yang didukung.")
         
     try:
         content = await file.read()
         if len(content) == 0:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+            raise HTTPException(status_code=400, detail="Berkas yang diunggah kosong (0 bytes).")
+            
+        # 1. Security & PDF Safety Validation
+        ok_safety, msg_safety = validate_pdf_safety(content, file.filename)
+        if not ok_safety:
+            raise HTTPException(status_code=400, detail=msg_safety)
             
         # Open PDF in memory
-        doc = pymupdf.open(stream=content, filetype="pdf")
+        try:
+            doc = pymupdf.open(stream=content, filetype="pdf")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Gagal membuka berkas PDF. Berkas mungkin korup atau tidak valid.")
+            
+        # 2. Gatekeeper: Academic Manuscript Eligibility Check
+        ok_eligibility, msg_eligibility, info = validate_manuscript_eligibility(doc, file.filename)
+        if not ok_eligibility:
+            raise HTTPException(status_code=422, detail=msg_eligibility)
         
         # Cast parameters
         min_p = int(min_pages)
