@@ -100,11 +100,13 @@ class IEEEComplianceChecker:
         self, 
         min_pages: int = 4, 
         max_pages: int = 6, 
+        hard_max_pages: int = 8,
         target_size: str = "A4",
         expected_copyright: Optional[str] = None
     ):
         self.min_pages = min_pages
         self.max_pages = max_pages
+        self.hard_max_pages = hard_max_pages
         self.target_size = target_size
         self.expected_copyright = expected_copyright
         self.violations: List[Violation] = []
@@ -131,6 +133,10 @@ class IEEEComplianceChecker:
                 font_name = font[3] if len(font) > 3 else font[0]
                 doc_fonts.add(font_name)
                 
+        is_regular_page_count = (self.min_pages <= total_pages <= self.max_pages)
+        is_extra_pages = (self.max_pages < total_pages <= self.hard_max_pages)
+        is_page_count_valid = (self.min_pages <= total_pages <= self.hard_max_pages)
+                
         self.metadata = PaperMetadata(
             filename=doc.name,
             total_pages=total_pages,
@@ -141,31 +147,72 @@ class IEEEComplianceChecker:
             has_copyright_notice=False,
             copyright_text="",
             is_a4=is_a4,
-            is_page_count_valid=(self.min_pages <= total_pages <= self.max_pages)
+            is_page_count_valid=is_page_count_valid,
+            is_extra_pages=is_extra_pages
         )
         
         # Rule 1.1: Paper Size Check
         if self.target_size == "A4" and not is_a4:
+            if is_letter:
+                msg = (
+                    f"Ukuran kertas terdeteksi US Letter ({p_width:.1f} x {p_height:.1f} pt). "
+                    "Prosiding IEEE ICoDMI (Region 10) mewajibkan ukuran A4 (210 x 297 mm / 595 x 842 pt) "
+                    "sesuai template resmi. Harap ubah Page Setup dokumen dari Letter menjadi A4 agar format batas "
+                    "margin dan kolom tidak bergeser saat digabungkan ke prosiding IEEE Xplore."
+                )
+            else:
+                msg = (
+                    f"Ukuran kertas terdeteksi kustom ({p_width:.1f} x {p_height:.1f} pt). "
+                    "Template resmi IEEE ICoDMI mewajibkan standar ukuran A4 (210 x 297 mm / 595 x 842 pt). Harap atur ukuran kertas dokumen ke A4."
+                )
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Page Setup",
-                comment=f"Paper size is '{size_name}', but IEEE conference template strictly prescribes A4 size (210 x 297 mm / 595 x 842 pt). Please change document page setup to A4.",
+                comment=msg,
                 location=f"Document-wide (Current size: {p_width:.1f} x {p_height:.1f} pt)",
                 page_num=1,
                 rect=pymupdf.Rect(0, 0, p_width, 40),
                 severity="Fatal"
             ))
             
-        # Rule 1.2: Page Count Limit Check
-        if total_pages < self.min_pages or total_pages > self.max_pages:
+        # Rule 1.2: Page Count Limit Check (Standar 4-6 Hal, Extra Pages maks. 8 Hal)
+        if total_pages < self.min_pages:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Page Count",
-                comment=f"Manuscript has {total_pages} pages. IEEE conference guideline requires between {self.min_pages} and {self.max_pages} pages.",
+                comment=f"Naskah hanya berjumlah {total_pages} halaman. Ketentuan IEEE ICoDMI mensyaratkan naskah minimal {self.min_pages} halaman.",
                 location=f"Overall Document ({total_pages} pages)",
                 page_num=total_pages,
                 rect=pymupdf.Rect(0, p_height - 50, p_width, p_height),
-                severity="Fatal" if total_pages > self.max_pages + 1 else "Warning"
+                severity="Fatal"
+            ))
+        elif self.max_pages < total_pages <= self.hard_max_pages:
+            self.violations.append(Violation(
+                no=len(self.violations) + 1,
+                category="Page Count (Extra Pages)",
+                comment=(
+                    f"Naskah berjumlah {total_pages} halaman (melebihi batas standar reguler {self.max_pages} halaman). "
+                    f"Naskah masuk kategori 'Extra Pages' ({total_pages - self.max_pages} halaman tambahan, maksimal diperbolehkan {self.hard_max_pages} halaman). "
+                    "Naskah tetap dapat diproses, namun penulis wajib melunasi biaya tambahan (extra page fee) sesuai ketentuan konferensi ICoDMI."
+                ),
+                location=f"Overall Document ({total_pages} pages)",
+                page_num=total_pages,
+                rect=pymupdf.Rect(0, p_height - 50, p_width, p_height),
+                severity="Warning"
+            ))
+        elif total_pages > self.hard_max_pages:
+            self.violations.append(Violation(
+                no=len(self.violations) + 1,
+                category="Page Count (Melebihi Batas Maksimal)",
+                comment=(
+                    f"Naskah memiliki {total_pages} halaman. Melebihi batas maksimal absolut yang diperbolehkan di IEEE ICoDMI "
+                    f"(maksimal {self.hard_max_pages} halaman termasuk extra pages). "
+                    f"Naskah TIDAK DAPAT DITERBITKAN sebelum dipangkas maksimal menjadi {self.hard_max_pages} halaman."
+                ),
+                location=f"Overall Document ({total_pages} pages)",
+                page_num=total_pages,
+                rect=pymupdf.Rect(0, p_height - 50, p_width, p_height),
+                severity="Fatal"
             ))
 
         # Check pages one by one

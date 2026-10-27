@@ -65,8 +65,22 @@ with st.sidebar:
     with col_min:
         min_pages = st.number_input("Min Halaman", value=4, min_value=1, max_value=20)
     with col_max:
-        max_pages = st.number_input("Max Halaman", value=6, min_value=1, max_value=20)
+        max_pages = st.number_input("Max Halaman Reguler", value=6, min_value=1, max_value=20)
         
+    hard_max_pages = st.number_input("Batas Maksimal Extra Pages", value=8, min_value=6, max_value=20, help="Maksimal total halaman termasuk extra pages (halaman 7 & 8 dikenakan biaya tambahan). Dokumen > 8 halaman ditolak.")
+
+    st.markdown("---")
+    with st.expander("ℹ️ Ketentuan Kertas & Halaman (FAQ)"):
+        st.markdown("""
+        **1. Apakah harus A4 atau boleh Letter?**
+        - Untuk **ICoDMI (IEEE Region 10 / Indonesia)**, naskah **WAJIB A4 (210 × 297 mm)** sesuai template resmi. Template Letter tidak diperbolehkan karena margin prosiding akan bergeser.
+        
+        **2. Arti 'Up to 8 Pages with Extra Pages':**
+        - **Total MAKSIMAL adalah 8 Halaman** (bukan tambah 8 halaman lagi).
+        - **1–6 Hal:** Standar registrasi reguler.
+        - **Hal 7 & 8:** Extra pages (dikenakan biaya tambahan per halaman).
+        - **> 8 Hal:** Wajib dipangkas / ditolak.
+        """)
     st.markdown("---")
     st.markdown("### 📌 Fitur Utama:")
     st.markdown("""
@@ -114,6 +128,7 @@ if uploaded_file is not None:
         checker = IEEEComplianceChecker(
             min_pages=min_pages,
             max_pages=max_pages,
+            hard_max_pages=hard_max_pages,
             target_size=target_size
         )
         violations, metadata = checker.check_pdf(doc)
@@ -121,7 +136,12 @@ if uploaded_file is not None:
     # Metrics display
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("Total Halaman", f"{metadata.total_pages} Hal", delta="Sesuai" if metadata.is_page_count_valid else f"Batas: {min_pages}-{max_pages}", delta_color="normal" if metadata.is_page_count_valid else "inverse")
+        if metadata.is_extra_pages:
+            st.metric("Total Halaman", f"{metadata.total_pages} Hal", delta=f"Extra ({metadata.total_pages-max_pages} Hal Tambahan)", delta_color="off")
+        elif metadata.is_page_count_valid:
+            st.metric("Total Halaman", f"{metadata.total_pages} Hal", delta="Standar Reguler", delta_color="normal")
+        else:
+            st.metric("Total Halaman", f"{metadata.total_pages} Hal", delta=f"Batas: {min_pages}-{hard_max_pages} Hal", delta_color="inverse")
     with col2:
         st.metric("Ukuran Kertas", metadata.paper_size_name, delta="A4 Valid" if metadata.is_a4 else "Bukan A4!", delta_color="normal" if metadata.is_a4 else "inverse")
     with col3:

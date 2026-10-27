@@ -24,4 +24,5 @@ class PaperMetadata:
     copyright_text: str = ""
     is_a4: bool = False
     is_page_count_valid: bool = False
+    is_extra_pages: bool = False
 

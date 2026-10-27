@@ -16,7 +16,8 @@ def main():
     parser.add_argument("pdf_path", help="Path to manuscript PDF file to check")
     parser.add_argument("--output-dir", default="./reports", help="Directory to save annotated PDF and reports")
     parser.add_argument("--min-pages", type=int, default=4, help="Minimum page limit (default: 4)")
-    parser.add_argument("--max-pages", type=int, default=6, help="Maximum page limit (default: 6)")
+    parser.add_argument("--max-pages", type=int, default=6, help="Maximum regular page limit (default: 6)")
+    parser.add_argument("--hard-max-pages", type=int, default=8, help="Hard maximum page limit with extra pages (default: 8)")
     parser.add_argument("--size", default="A4", choices=["A4", "Letter"], help="Target paper size (default: A4)")
     
     args = parser.parse_args()
@@ -58,13 +59,17 @@ def main():
     checker = IEEEComplianceChecker(
         min_pages=args.min_pages, 
         max_pages=args.max_pages, 
+        hard_max_pages=args.hard_max_pages,
         target_size=args.size
     )
     violations, metadata = checker.check_pdf(doc)
     
     # Summary
+    page_status_desc = f"{args.min_pages}-{args.max_pages} Standar"
+    if metadata.is_extra_pages:
+        page_status_desc += f" (Masuk Extra Pages, maks. {args.hard_max_pages})"
     print(f"\n{Fore.YELLOW}[METADATA SCAN]")
-    print(f"• Total Pages    : {metadata.total_pages} (Allowed: {args.min_pages}-{args.max_pages})")
+    print(f"• Total Pages    : {metadata.total_pages} (Ketentuan: {page_status_desc})")
     print(f"• Detected Size  : {metadata.paper_size_name} ({metadata.page_width_pt:.1f} x {metadata.page_height_pt:.1f} pt)")
     print(f"• Copyright Line : {'Found' if metadata.has_copyright_notice else 'Missing / Incomplete'}")
     print(f"• Fonts Count    : {len(metadata.fonts)} unique font subsets")

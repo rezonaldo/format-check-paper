@@ -40,6 +40,7 @@ async def check_manuscript(
     file: UploadFile = File(...),
     min_pages: int = Form(4),
     max_pages: int = Form(6),
+    hard_max_pages: int = Form(8),
     target_size: str = Form("A4"),
     conf_name: str = Form("ICoDMI 2026 (SSMI IPB)")
 ):
@@ -70,11 +71,13 @@ async def check_manuscript(
         # Cast parameters
         min_p = int(min_pages)
         max_p = int(max_pages)
+        hard_max_p = int(hard_max_pages)
         
         # Check compliance
         checker = IEEEComplianceChecker(
             min_pages=min_p,
             max_pages=max_p,
+            hard_max_pages=hard_max_p,
             target_size=target_size
         )
         violations, metadata = checker.check_pdf(doc)
@@ -125,6 +128,7 @@ async def check_manuscript(
                 "paper_size_name": metadata.paper_size_name,
                 "is_a4": metadata.is_a4,
                 "is_page_count_valid": metadata.is_page_count_valid,
+                "is_extra_pages": metadata.is_extra_pages,
                 "has_copyright_notice": metadata.has_copyright_notice,
                 "fonts_count": len(metadata.fonts)
             },
