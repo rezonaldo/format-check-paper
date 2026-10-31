@@ -306,37 +306,14 @@ class IEEEComplianceChecker:
         p_width = page.rect.width
         p_height = page.rect.height
         
-        # 1. IEEE Copyright Notice Check in bottom left footer (y > 750, x < 350)
+        # 1. IEEE Copyright Notice Check in bottom left footer
+        # Catatan: Pengecekan ketiadaan copyright notice dinonaktifkan atas permintaan panitia
+        # karena IEEE copyright line biasanya disematkan secara terpusat oleh publisher / komite prosiding.
         footer_clip = pymupdf.Rect(30, p_height - 90, 350, p_height - 15)
         footer_text = page.get_text("text", clip=footer_clip).strip()
         
         has_copyright = bool(re.search(r'(©\s*20\d\d\s*IEEE|\bIEEE\b|97[89]-)', footer_text, re.IGNORECASE))
-        has_placeholder_copyright = bool(re.search(r'XXX-X-XXXX-XXXX-X', footer_text))
-        
-        if has_placeholder_copyright:
-            rects = page.search_for("XXX-X-XXXX-XXXX-X", clip=footer_clip)
-            r = rects[0] if rects else footer_clip
-            self.violations.append(Violation(
-                no=len(self.violations) + 1,
-                category="IEEE Copyright Notice",
-                comment="Unfilled placeholder copyright code detected: 'XXX-X-XXXX-XXXX-X...'. Please replace it with the official IEEE conference copyright clearance code.",
-                location="Page 1, Bottom Left Footer",
-                page_num=1,
-                rect=r,
-                severity="Fatal",
-                snippet="XXX-X-XXXX-XXXX-X"
-            ))
-        elif not has_copyright:
-            self.violations.append(Violation(
-                no=len(self.violations) + 1,
-                category="IEEE Copyright Notice",
-                comment="Missing IEEE Copyright Notice in the bottom-left of page 1. IEEE conference proceedings require the copyright clearance code line (e.g. 979-8-... ©20XX IEEE) in the footer.",
-                location="Page 1, Bottom Left Footer",
-                page_num=1,
-                rect=footer_clip,
-                severity="Warning"
-            ))
-        else:
+        if has_copyright:
             self.metadata.has_copyright_notice = True
             self.metadata.copyright_text = footer_text
             

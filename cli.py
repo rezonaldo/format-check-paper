@@ -71,7 +71,7 @@ def main():
     print(f"\n{Fore.YELLOW}[METADATA SCAN]")
     print(f"• Total Pages    : {metadata.total_pages} (Ketentuan: {page_status_desc})")
     print(f"• Detected Size  : {metadata.paper_size_name} ({metadata.page_width_pt:.1f} x {metadata.page_height_pt:.1f} pt)")
-    print(f"• Copyright Line : {'Found' if metadata.has_copyright_notice else 'Missing / Incomplete'}")
+    print(f"• Copyright Line : {'Terdeteksi' if metadata.has_copyright_notice else 'Tidak ada (Dikelola oleh Panitia/Publisher)'}")
     print(f"• Fonts Count    : {len(metadata.fonts)} unique font subsets")
     
     fatal_count = sum(1 for v in violations if v.severity == "Fatal")
