@@ -112,10 +112,25 @@
                     </div>
                     <div>
                         <p class="text-base font-semibold text-slate-700">Klik atau seret & lepas file PDF paper di sini</p>
-                        <p class="text-xs text-slate-500 mt-1">Hanya mendukung format .pdf (Maksimal 25MB)</p>
+                        <p class="text-xs text-slate-500 mt-1">Format .pdf &bull; Batas web: maks. 4.5 MB (untuk berkas besar, gunakan aplikasi lokal)</p>
                     </div>
                     <div id="selectedFileInfo" class="hidden inline-block bg-white border border-blue-200 text-blue-900 text-sm font-medium px-4 py-1.5 rounded-full shadow-sm">
                         <!-- File info inserted here -->
+                    </div>
+                    <!-- Large File Advisory Box -->
+                    <div id="largeFileAlert" class="hidden max-w-xl mx-auto bg-amber-50 border border-amber-300 text-amber-900 text-xs p-3.5 rounded-xl text-left space-y-1.5 shadow-sm">
+                        <div class="font-bold flex items-center gap-1.5 text-amber-800 text-sm">
+                            <span>⚠️</span>
+                            <span>Ukuran Berkas Melebihi Batas Hosting Web Vercel (Maks. 4.5 MB)</span>
+                        </div>
+                        <p id="largeFileText" class="leading-relaxed"></p>
+                        <div class="pt-1 text-[11px] text-amber-800/90 font-medium">
+                            <b>2 Solusi Mudah:</b>
+                            <ol class="list-decimal list-inside space-y-0.5 mt-0.5">
+                                <li>Kompres berkas PDF ini secara gratis (misal via <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" class="underline font-bold text-amber-900">ilovepdf.com/compress_pdf</a>) menjadi &lt; 4 MB lalu unggah ulang ke web ini.</li>
+                                <li>Atau jalankan aplikasi lokal di laptop Anda tanpa batas ukuran berkas: klik 2x file <b>Jalankan_IEEE_Checker.bat</b> di folder projek Anda.</li>
+                            </ol>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -137,7 +152,7 @@
                 <div class="space-y-2">
                     <h3 id="errorTitle" class="text-base font-bold text-red-900">Berkas Ditolak / Tidak Memenuhi Syarat</h3>
                     <p id="errorMsg" class="text-sm text-red-800 leading-relaxed"></p>
-                    <div class="mt-3 pt-3 border-t border-red-200 text-xs text-red-700 bg-red-100/40 p-2.5 rounded-lg">
+                    <div id="errorHint" class="mt-3 pt-3 border-t border-red-200 text-xs text-red-700 bg-red-100/40 p-2.5 rounded-lg">
                         💡 <b>Petunjuk:</b> Sistem ini dirancang khusus untuk memvalidasi naskah paper ilmiah IEEE (ICoDMI) yang memuat struktur standar (Judul, Daftar Penulis, Abstrak, Pendahuluan, dan Referensi). Berkas non-paper seperti soal latihan, modul, formulir, atau hasil scan gambar akan ditolak secara otomatis.
                     </div>
                 </div>
@@ -245,12 +260,16 @@
         const dropZone = document.getElementById('dropZone');
         const pdfFileInput = document.getElementById('pdfFileInput');
         const selectedFileInfo = document.getElementById('selectedFileInfo');
+        const largeFileAlert = document.getElementById('largeFileAlert');
+        const largeFileText = document.getElementById('largeFileText');
         const btnCheck = document.getElementById('btnCheck');
         const loadingSection = document.getElementById('loadingSection');
         const resultsSection = document.getElementById('resultsSection');
         
         const errorSection = document.getElementById('errorSection');
+        const errorTitle = document.getElementById('errorTitle');
         const errorMsg = document.getElementById('errorMsg');
+        const errorHint = document.getElementById('errorHint');
         
         let selectedFile = null;
         let lastResultData = null;
@@ -286,17 +305,37 @@
         function handleFileSelect(file) {
             errorSection.classList.add('hidden');
             if (!file.name.toLowerCase().endsWith('.pdf')) {
-                showError('Silakan pilih berkas asli dengan ekstensi .pdf');
+                showError('Format Tidak Didukung', 'Silakan pilih berkas asli dengan ekstensi .pdf', '');
                 return;
             }
             selectedFile = file;
-            selectedFileInfo.innerHTML = `✓ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-            selectedFileInfo.classList.remove('hidden');
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            
+            // Check if file exceeds Vercel's 4.5 MB request payload limit
+            if (file.size > 4.5 * 1024 * 1024) {
+                selectedFileInfo.innerHTML = `⚠️ <span class="text-amber-800 font-semibold">${file.name} (${sizeMB} MB)</span>`;
+                selectedFileInfo.classList.remove('hidden');
+                
+                largeFileText.innerHTML = `Berkas <b>"${file.name}"</b> memiliki ukuran <b>${sizeMB} MB</b>. Layanan hosting cloud Vercel Serverless memiliki batas transfer mutlak sebesar <b>4.5 MB</b>, sehingga berkas ini akan ditolak oleh server jika dipaksakan dikirim langsung.`;
+                largeFileAlert.classList.remove('hidden');
+            } else {
+                selectedFileInfo.innerHTML = `✓ ${file.name} (${sizeMB} MB)`;
+                selectedFileInfo.classList.remove('hidden');
+                largeFileAlert.classList.add('hidden');
+            }
+            
             btnCheck.disabled = false;
         }
 
-        function showError(msg) {
+        function showError(title, msg, hint) {
+            errorTitle.innerText = title || 'Berkas Ditolak / Terjadi Kesalahan';
             errorMsg.innerText = msg;
+            if (hint) {
+                errorHint.innerHTML = hint;
+                errorHint.classList.remove('hidden');
+            } else {
+                errorHint.classList.add('hidden');
+            }
             errorSection.classList.remove('hidden');
             resultsSection.classList.add('hidden');
             errorSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -305,6 +344,19 @@
         // Run check button
         btnCheck.addEventListener('click', async () => {
             if (!selectedFile) return;
+
+            // Immediate Client-Side Guard for Vercel 4.5MB Serverless Limit
+            if (selectedFile.size > 4.5 * 1024 * 1024) {
+                const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+                showError(
+                    'Ukuran Berkas Melebihi Batas Web Vercel (Maksimal 4.5 MB)',
+                    `Berkas "${selectedFile.name}" berukuran ${sizeMB} MB. Serverless Vercel Cloud memiliki batas transfer 4.5 MB, sehingga file ini tidak dapat diproses melalui web online Vercel tanpa dikompresi terlebih dahulu.`,
+                    `💡 <b>2 Solusi Agar Berkas Dapat Diperiksa:</b><br>
+                    1. <b>Gunakan Aplikasi Lokal (Rekomendasi - Tanpa Batas):</b> Buka folder projek di komputer Anda, klik dua kali file <b>Jalankan_IEEE_Checker.bat</b>. Versi lokal tidak memiliki batasan ukuran dan dapat memindai berkas ${sizeMB} MB ini dalam 1-2 detik.<br>
+                    2. <b>Kompres PDF Online:</b> Kompres file ini secara gratis di <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" class="underline font-bold text-red-900">ilovepdf.com/compress_pdf</a> agar ukurannya turun ke bawah 4 MB, lalu unggah kembali ke web ini.`
+                );
+                return;
+            }
 
             // Form data
             const formData = new FormData();
@@ -327,10 +379,28 @@
                     body: formData
                 });
 
-                const data = await response.json();
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (jsonErr) {
+                    if (response.status === 413 || responseText.includes('Request Entity Too Large') || responseText.includes('Payload Too Large')) {
+                        showError(
+                            'Ukuran Berkas Melebihi Batas Web Vercel (Maks. 4.5 MB)',
+                            `Berkas berukuran ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB melebihi batas transfer serverless Vercel.`,
+                            '💡 <b>Solusi:</b> Harap kompres berkas PDF terlebih dahulu (menjadi &lt; 4 MB) atau gunakan aplikasi desktop lokal lewat <b>Jalankan_IEEE_Checker.bat</b>.'
+                        );
+                        return;
+                    }
+                    throw new Error(`Koneksi server gagal (${response.status}): ${responseText.substring(0, 100)}`);
+                }
 
                 if (!response.ok) {
-                    showError(data.detail || 'Terjadi kesalahan saat memeriksa berkas.');
+                    showError(
+                        'Pemeriksaan Format Gagal / Berkas Ditolak',
+                        data.detail || 'Terjadi kesalahan saat memeriksa berkas.',
+                        '💡 <b>Petunjuk:</b> Sistem ini dirancang khusus untuk memvalidasi naskah paper ilmiah IEEE (ICoDMI) yang memuat struktur standar (Judul, Daftar Penulis, Abstrak, Pendahuluan, dan Referensi). Berkas non-paper seperti soal latihan, modul, formulir, atau hasil scan gambar akan ditolak secara otomatis.'
+                    );
                     return;
                 }
 
@@ -338,7 +408,11 @@
                 renderResults(data);
 
             } catch (error) {
-                showError('Koneksi atau proses gagal: ' + error.message);
+                showError(
+                    'Koneksi / Proses Gagal',
+                    error.message,
+                    '💡 Jika kendala berlanjut, Anda dapat menjalankan aplikasi secara offline di komputer Anda menggunakan file <b>Jalankan_IEEE_Checker.bat</b>.'
+                );
             } finally {
                 loadingSection.classList.add('hidden');
                 btnCheck.disabled = false;
