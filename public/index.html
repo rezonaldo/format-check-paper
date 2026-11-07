@@ -3,256 +3,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICoDMI 2026 - IEEE Manuscript Format Checker</title>
+    <title>ICoDMI IEEE Manuscript Compliance Review</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .font-mono-code {
+            font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+        }
+        /* Accessible interaction affordances */
+        a, button, select, [role="button"] {
+            cursor: pointer;
+        }
+        button:disabled, select:disabled, input:disabled {
+            cursor: not-allowed;
+        }
+        /* Focus visible accessibility indicator */
+        input:focus-visible, select:focus-visible, button:focus-visible, [tabindex="0"]:focus-visible {
+            outline: 2px solid #0f172a;
+            outline-offset: 2px;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
-    <!-- Top Navigation / Header -->
-    <header class="bg-blue-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+    <!-- Header / Editorial Masthead -->
+    <header class="bg-slate-900 text-white border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="flex items-center gap-3">
-                <span class="text-3xl">📑</span>
+                <div class="w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-200 shrink-0" aria-hidden="true">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight">IEEE Manuscript Format Checker</h1>
-                    <p class="text-xs text-blue-200">Publication Division &bull; ICoDMI (SSMI IPB)</p>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">ICoDMI IEEE Manuscript Compliance Review</h1>
+                    <p class="text-xs text-slate-400 mt-0.5">Publication Division &bull; SSMI IPB &bull; IEEE Region 10 Technical Conference</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-800 text-blue-200 border border-blue-700">
-                    IEEE Template 2-Column Standard
+            <div class="flex items-center gap-2 text-xs">
+                <span class="inline-flex items-center px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+                    Template: IEEE 2-Column Standard
+                </span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+                    Ukuran Target: A4
                 </span>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full space-y-6">
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
 
-        <!-- Intro & Settings Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-                <div>
-                    <h2 class="text-lg font-semibold text-slate-900">Pemeriksaan Presisi Naskah Final IEEE</h2>
-                    <p class="text-sm text-slate-500">Unggah file PDF naskah paper untuk memindai kepatuhan template IEEE, menentukan koordinat kesalahan, memberi stabilo otomatis, dan membuat formulir revisi Word (.docx).</p>
-                </div>
+        <!-- Section 1: Parameters & Editorial Instructions -->
+        <section aria-labelledby="section-settings-title" class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 id="section-settings-title" class="text-base font-bold text-slate-900">Konfigurasi Parameter & Ketentuan Publikasi</h2>
+                <p class="text-xs sm:text-sm text-slate-600 mt-1">
+                    Sesuaikan parameter pemeriksaan naskah prosiding sesuai ketentuan resmi panitia ICoDMI (SSMI IPB).
+                </p>
             </div>
 
-            <!-- Parameters -->
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-5 text-sm">
+            <!-- Parameters Input Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5 text-xs">
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">Nama Konferensi</label>
-                    <input type="text" id="confName" value="ICoDMI 2026 (SSMI IPB)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50">
+                    <label for="confName" class="block font-semibold text-slate-700 mb-1.5">Nama Konferensi</label>
+                    <input type="text" id="confName" value="ICoDMI 2026 (SSMI IPB)" class="w-full h-11 px-3 border border-slate-300 rounded text-slate-800 bg-slate-50 focus:bg-white focus:border-slate-500 text-xs">
                 </div>
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">Ukuran Kertas</label>
-                    <select id="targetSize" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50">
-                        <option value="A4" selected>A4 (210 x 297 mm) - Wajib ICoDMI</option>
+                    <label for="targetSize" class="block font-semibold text-slate-700 mb-1.5">Ukuran Kertas Target</label>
+                    <select id="targetSize" class="w-full h-11 px-3 border border-slate-300 rounded text-slate-800 bg-slate-50 focus:bg-white focus:border-slate-500 text-xs">
+                        <option value="A4" selected>A4 (210 x 297 mm) [Standar Wajib ICoDMI]</option>
                         <option value="Letter">US Letter (8.5 x 11 inci)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">Standar Reguler</label>
-                    <div class="flex items-center gap-1.5">
-                        <input type="number" id="minPages" value="4" min="1" max="20" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 text-center" title="Min Halaman">
-                        <span class="text-slate-400">-</span>
-                        <input type="number" id="maxPages" value="6" min="1" max="20" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 text-center" title="Max Halaman Reguler">
-                        <span class="text-xs text-slate-500">Hal</span>
+                    <label for="minPages" class="block font-semibold text-slate-700 mb-1.5">Rentang Halaman Reguler</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="minPages" value="4" min="1" max="20" class="w-full h-11 px-2 border border-slate-300 rounded text-slate-800 bg-slate-50 focus:bg-white focus:border-slate-500 text-center font-medium text-xs" title="Jumlah Halaman Minimum">
+                        <span class="text-slate-400 font-medium">s/d</span>
+                        <input type="number" id="maxPages" value="6" min="1" max="20" class="w-full h-11 px-2 border border-slate-300 rounded text-slate-800 bg-slate-50 focus:bg-white focus:border-slate-500 text-center font-medium text-xs" title="Jumlah Halaman Maksimum Reguler">
+                        <span class="text-slate-500 font-medium whitespace-nowrap">Hal</span>
                     </div>
                 </div>
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">Batas Maks. Extra Pages</label>
-                    <div class="flex items-center gap-1.5">
-                        <input type="number" id="hardMaxPages" value="8" min="6" max="20" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 text-center" title="Maksimal Mutlak Total Halaman">
-                        <span class="text-xs text-slate-500">Hal (Maks. 8)</span>
+                    <label for="hardMaxPages" class="block font-semibold text-slate-700 mb-1.5">Batas Mutlak (Termasuk Extra Pages)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="hardMaxPages" value="8" min="6" max="20" class="w-full h-11 px-3 border border-slate-300 rounded text-slate-800 bg-slate-50 focus:bg-white focus:border-slate-500 text-center font-medium text-xs" title="Batas Maksimal Mutlak Total Halaman">
+                        <span class="text-slate-500 font-medium whitespace-nowrap">Maks. 8 Hal</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Keterangan Penting: A4 vs US Letter & Extra Pages -->
+            <!-- Guidelines Callouts -->
             <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 pt-5 border-t border-slate-100 text-xs">
-                <div class="bg-blue-50/80 border border-blue-200/90 rounded-xl p-4 text-blue-950 space-y-2">
-                    <div class="flex items-center gap-2 font-bold text-blue-900 text-sm">
-                        <span class="text-base">📐</span>
-                        <span>Apakah Paper Harus A4 Saja atau Boleh US Letter?</span>
+                <!-- A4 vs US Letter -->
+                <div class="bg-slate-50 border border-slate-200 rounded-md p-4 text-slate-700 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                        <svg class="w-4 h-4 text-slate-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Ketentuan Ukuran Kertas: Mengapa Wajib A4?</span>
                     </div>
-                    <p class="leading-relaxed text-blue-900/90">
-                        Secara internasional IEEE memang menyediakan 2 versi template (A4 dan US Letter). Namun untuk <b>ICoDMI (SSMI IPB / IEEE Region 10)</b>, naskah <b>WAJIB menggunakan ukuran A4 (210 × 297 mm / 595.3 × 841.9 pt)</b>. Template resmi yang dibagikan panitia adalah format A4. Jika penulis menggunakan US Letter, batas margin atas-bawah dan tinggi kolom akan terpotong atau bergeser saat digabungkan ke dalam buku prosiding IEEE Xplore.
+                    <p class="leading-relaxed text-slate-600">
+                        IEEE secara global menyediakan template A4 dan US Letter. Namun untuk <b>ICoDMI (SSMI IPB / IEEE Region 10)</b>, seluruh naskah <b>wajib berformat A4 (210 × 297 mm)</b>. Template prosiding resmi panitia berbasis A4. Penggunaan US Letter akan mengakibatkan margin atas-bawah dan kolom naskah terpotong saat proses kompilasi prosiding IEEE Xplore.
                     </p>
                 </div>
-                <div class="bg-amber-50/80 border border-amber-200/90 rounded-xl p-4 text-amber-950 space-y-2">
-                    <div class="flex items-center gap-2 font-bold text-amber-900 text-sm">
-                        <span class="text-base">📄</span>
-                        <span>Arti "Up to 8 Pages with Extra Pages":</span>
+
+                <!-- Up to 8 Pages with Extra Pages -->
+                <div class="bg-slate-50 border border-slate-200 rounded-md p-4 text-slate-700 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                        <svg class="w-4 h-4 text-slate-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Aturan Halaman: Arti "Up to 8 Pages with Extra Pages"</span>
                     </div>
-                    <p class="leading-relaxed text-amber-900/90">
-                        Istilah ini berarti <b>MAKSIMAL TOTAL NASKAH ADALAH 8 HALAMAN</b> (bukan naskah 6 halaman ditambah 8 halaman lagi).
+                    <p class="leading-relaxed text-slate-600">
+                        Ketentuan ini menetapkan <b>maksimal total panjang naskah adalah 8 halaman</b> (bukan 6 halaman ditambah 8 halaman tambahan).
                     </p>
-                    <ul class="list-disc list-inside space-y-1 text-amber-900/90 pl-1">
-                        <li><b>4 – 6 Halaman:</b> Standar reguler (sudah tercakup dalam biaya registrasi normal).</li>
-                        <li><b>Halaman 7 & 8:</b> Diperbolehkan sebagai <i>Extra Pages</i> (dikenakan biaya tambahan publikasi per halaman).</li>
-                        <li><b>Lebih dari 8 Halaman:</b> <b>Ditolak / Wajib dipangkas</b>. Prosiding IEEE ICoDMI tidak menerima paper > 8 halaman dalam kondisi apa pun.</li>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600 pl-0.5">
+                        <li><b>4 s/d 6 Halaman:</b> Standar naskah reguler (tercakup dalam biaya registrasi normal).</li>
+                        <li><b>Halaman 7 dan 8:</b> Diperkenankan sebagai <i>Extra Pages</i> (dikenakan biaya publikasi tambahan per halaman).</li>
+                        <li><b>Lebih dari 8 Halaman:</b> <b>Ditolak otomatis</b>. Sistem prosiding IEEE ICoDMI tidak menerima naskah melebihi 8 halaman.</li>
                     </ul>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Upload Dropzone Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div id="dropZone" class="border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-xl p-8 text-center cursor-pointer transition-colors bg-blue-50/40 hover:bg-blue-50">
+        <!-- Section 2: Upload Dropzone & Action -->
+        <section aria-labelledby="section-upload-title" class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+            <h2 id="section-upload-title" class="sr-only">Unggah Berkas Naskah PDF</h2>
+
+            <div id="dropZone" tabindex="0" role="button" aria-label="Area unggah naskah PDF. Klik atau tekan Enter untuk memilih berkas" class="border-2 border-dashed border-slate-300 hover:border-slate-500 focus-visible:border-slate-800 rounded-lg p-8 text-center transition-colors bg-slate-50/70 hover:bg-slate-100/70">
                 <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden">
                 <div class="space-y-3">
-                    <div class="mx-auto w-12 h-12 text-blue-600 bg-blue-100 rounded-full flex items-center justify-center text-2xl">
-                        📄
+                    <div class="mx-auto w-12 h-12 text-slate-600 bg-slate-200/80 rounded-md flex items-center justify-center" aria-hidden="true">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
                     </div>
                     <div>
-                        <p class="text-base font-semibold text-slate-700">Klik atau seret & lepas file PDF paper di sini</p>
-                        <p class="text-xs text-slate-500 mt-1">Format .pdf &bull; Batas web: maks. 4.5 MB (untuk berkas besar, gunakan aplikasi lokal)</p>
+                        <p class="text-sm font-semibold text-slate-800">Klik atau seret & lepas berkas PDF naskah di sini</p>
+                        <p class="text-xs text-slate-500 mt-1">Format berkas: .pdf (Batas web Vercel: maks. 4.5 MB. Untuk berkas besar, gunakan runner lokal)</p>
                     </div>
-                    <div id="selectedFileInfo" class="hidden inline-block bg-white border border-blue-200 text-blue-900 text-sm font-medium px-4 py-1.5 rounded-full shadow-sm">
-                        <!-- File info inserted here -->
+                    
+                    <div id="selectedFileInfo" class="hidden inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-900 text-xs font-medium px-3.5 py-1.5 rounded shadow-sm">
+                        <!-- File info dynamically inserted here -->
                     </div>
+
                     <!-- Large File Advisory Box -->
-                    <div id="largeFileAlert" class="hidden max-w-xl mx-auto bg-amber-50 border border-amber-300 text-amber-900 text-xs p-3.5 rounded-xl text-left space-y-1.5 shadow-sm">
-                        <div class="font-bold flex items-center gap-1.5 text-amber-800 text-sm">
-                            <span>⚠️</span>
-                            <span>Ukuran Berkas Melebihi Batas Hosting Web Vercel (Maks. 4.5 MB)</span>
+                    <div id="largeFileAlert" class="hidden max-w-xl mx-auto bg-amber-50 border border-amber-300 text-amber-900 text-xs p-4 rounded text-left space-y-2 shadow-sm" role="alert">
+                        <div class="font-bold flex items-center gap-2 text-amber-900 text-xs sm:text-sm">
+                            <svg class="w-4 h-4 text-amber-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <span>Ukuran Berkas Melebihi Batas Web Vercel Cloud (Maks. 4.5 MB)</span>
                         </div>
-                        <p id="largeFileText" class="leading-relaxed"></p>
-                        <div class="pt-1 text-[11px] text-amber-800/90 font-medium">
-                            <b>2 Solusi Mudah:</b>
-                            <ol class="list-decimal list-inside space-y-0.5 mt-0.5">
-                                <li>Kompres berkas PDF ini secara gratis (misal via <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" class="underline font-bold text-amber-900">ilovepdf.com/compress_pdf</a>) menjadi &lt; 4 MB lalu unggah ulang ke web ini.</li>
-                                <li>Atau jalankan aplikasi lokal di laptop Anda tanpa batas ukuran berkas: klik 2x file <b>Jalankan_IEEE_Checker.bat</b> di folder projek Anda.</li>
+                        <p id="largeFileText" class="leading-relaxed text-amber-800 text-xs"></p>
+                        <div class="pt-1 text-[11px] text-amber-900 font-medium">
+                            <b>Dua Solusi Praktis:</b>
+                            <ol class="list-decimal list-inside space-y-1 mt-1">
+                                <li>Kompres naskah PDF secara gratis (misalnya di <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-950">ilovepdf.com/compress_pdf</a>) menjadi di bawah 4 MB, lalu unggah kembali ke web ini.</li>
+                                <li>Atau jalankan aplikasi checker secara lokal di komputer Anda tanpa batas ukuran berkas: klik 2 kali file <b>Jalankan_IEEE_Checker.bat</b> di folder projek Anda.</li>
                             </ol>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Submit Button -->
-            <div class="mt-4 flex justify-end">
-                <button id="btnCheck" disabled class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:bg-slate-300 text-white font-medium rounded-lg shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed">
-                    <span>Mulai Pengecekan Presisi</span>
+            <!-- Submit Action -->
+            <div class="mt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <span class="text-xs text-slate-500">Pemeriksaan mencakup margin, struktur kolom, font heading, teks sisa template, dan daftar referensi.</span>
+                <button id="btnCheck" disabled class="w-full sm:w-auto h-11 px-6 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white disabled:text-slate-400 font-semibold text-xs rounded transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <span>Periksa Kepatuhan Naskah</span>
                 </button>
             </div>
-        </div>
+        </section>
 
-        <!-- Security & Eligibility Rejection Card (Hidden by default) -->
-        <div id="errorSection" class="hidden bg-red-50 rounded-xl border border-red-200 p-6 shadow-sm">
-            <div class="flex items-start gap-4">
-                <div class="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xl shrink-0">
-                    🛑
+        <!-- Section 3: Error & Security Block Notification (Hidden by default) -->
+        <section id="errorSection" class="hidden bg-red-50 border border-red-200 rounded-lg p-5 shadow-sm" role="alert" aria-live="assertive">
+            <div class="flex items-start gap-3.5">
+                <div class="w-8 h-8 rounded bg-red-100 border border-red-200 text-red-700 flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                 </div>
-                <div class="space-y-2">
-                    <h3 id="errorTitle" class="text-base font-bold text-red-900">Berkas Ditolak / Tidak Memenuhi Syarat</h3>
-                    <p id="errorMsg" class="text-sm text-red-800 leading-relaxed"></p>
-                    <div id="errorHint" class="mt-3 pt-3 border-t border-red-200 text-xs text-red-700 bg-red-100/40 p-2.5 rounded-lg">
-                        💡 <b>Petunjuk:</b> Sistem ini dirancang khusus untuk memvalidasi naskah paper ilmiah IEEE (ICoDMI) yang memuat struktur standar (Judul, Daftar Penulis, Abstrak, Pendahuluan, dan Referensi). Berkas non-paper seperti soal latihan, modul, formulir, atau hasil scan gambar akan ditolak secara otomatis.
+                <div class="space-y-1.5 flex-1">
+                    <h3 id="errorTitle" class="text-sm font-bold text-red-900">Berkas Ditolak atau Format Tidak Sesuai</h3>
+                    <p id="errorMsg" class="text-xs text-red-800 leading-relaxed"></p>
+                    <div id="errorHint" class="mt-2.5 pt-2.5 border-t border-red-200 text-xs text-red-800 bg-red-100/50 p-2.5 rounded">
+                        <b>Petunjuk:</b> Sistem ini dikhususkan untuk memvalidasi naskah paper ilmiah format IEEE (ICoDMI) yang memuat struktur standar (Judul, Penulis, Abstrak, Pendahuluan, dan Referensi). Dokumen non-paper seperti soal latihan, modul kuliah, formulir, atau berkas hasil pindai gambar akan ditolak secara otomatis demi keamanan sistem.
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Loading Spinner (Hidden by default) -->
-        <div id="loadingSection" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center space-y-4">
-            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
-            <p class="text-base font-medium text-slate-700">Sedang memindai kepatuhan template IEEE & menghitung koordinat stabilo...</p>
-            <p class="text-xs text-slate-400">Memeriksa margin, teks template, penulisan gambar & tabel, rumus, dan referensi...</p>
-        </div>
+        <!-- Section 4: Loading State (Hidden by default) -->
+        <section id="loadingSection" class="hidden bg-white rounded-lg border border-slate-200 p-12 text-center space-y-3 shadow-sm" aria-live="polite">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-slate-800 border-t-transparent" aria-hidden="true"></div>
+            <p class="text-sm font-semibold text-slate-800">Sedang memindai kepatuhan template IEEE dan menghitung koordinat naskah...</p>
+            <p class="text-xs text-slate-500">Memeriksa margin kolom, ukuran kertas, keberadaan teks template bawaan, rumus, tabel, dan format sitasi.</p>
+        </section>
 
-        <!-- Results Section (Hidden by default) -->
-        <div id="resultsSection" class="hidden space-y-6">
+        <!-- Section 5: Review Results Section (Hidden by default) -->
+        <section id="resultsSection" class="hidden space-y-6" aria-labelledby="section-results-title">
+            <h2 id="section-results-title" class="sr-only">Hasil Pemeriksaan Naskah</h2>
 
-            <!-- Metrics Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                    <p class="text-xs text-slate-500 uppercase font-semibold">Total Halaman</p>
-                    <p id="resTotalPages" class="text-2xl font-bold text-slate-900 mt-1">-</p>
-                    <span id="resPageBadge" class="text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block bg-slate-100 text-slate-600">Sesuai</span>
+            <!-- Metrics Summary Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                    <p class="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Total Halaman</p>
+                    <p id="resTotalPages" class="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tabular-nums font-mono-code">-</p>
+                    <span id="resPageBadge" class="text-[11px] font-medium px-2 py-0.5 rounded mt-1.5 inline-block bg-slate-100 text-slate-700 border border-slate-200">Sesuai</span>
                 </div>
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                    <p class="text-xs text-slate-500 uppercase font-semibold">Ukuran Kertas</p>
-                    <p id="resPaperSize" class="text-2xl font-bold text-slate-900 mt-1">-</p>
-                    <span id="resSizeBadge" class="text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block bg-slate-100 text-slate-600">A4 Valid</span>
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                    <p class="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Ukuran Kertas</p>
+                    <p id="resPaperSize" class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">-</p>
+                    <span id="resSizeBadge" class="text-[11px] font-medium px-2 py-0.5 rounded mt-1.5 inline-block bg-slate-100 text-slate-700 border border-slate-200">A4 Valid</span>
                 </div>
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                    <p class="text-xs text-slate-500 uppercase font-semibold">Pelanggaran Fatal</p>
-                    <p id="resFatalCount" class="text-2xl font-bold text-red-600 mt-1">0</p>
-                    <span class="text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block bg-red-100 text-red-700">Blocker</span>
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                    <p class="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Pelanggaran Fatal</p>
+                    <p id="resFatalCount" class="text-xl sm:text-2xl font-bold text-red-600 mt-1 tabular-nums font-mono-code">0</p>
+                    <span class="text-[11px] font-medium px-2 py-0.5 rounded mt-1.5 inline-block bg-red-50 text-red-700 border border-red-200">Blocker</span>
                 </div>
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                    <p class="text-xs text-slate-500 uppercase font-semibold">Catatan Editorial</p>
-                    <p id="resWarningCount" class="text-2xl font-bold text-amber-600 mt-1">0</p>
-                    <span class="text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block bg-amber-100 text-amber-700">Wajib Revisi</span>
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                    <p class="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Catatan Editorial</p>
+                    <p id="resWarningCount" class="text-xl sm:text-2xl font-bold text-amber-700 mt-1 tabular-nums font-mono-code">0</p>
+                    <span class="text-[11px] font-medium px-2 py-0.5 rounded mt-1.5 inline-block bg-amber-50 text-amber-800 border border-amber-200">Wajib Revisi</span>
                 </div>
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center col-span-2 sm:col-span-1">
-                    <p class="text-xs text-slate-500 uppercase font-semibold">Total Revisi</p>
-                    <p id="resTotalViolations" class="text-2xl font-bold text-blue-700 mt-1">0</p>
-                    <span class="text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block bg-blue-100 text-blue-700">Item</span>
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center col-span-2 sm:col-span-1">
+                    <p class="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Total Temuan</p>
+                    <p id="resTotalViolations" class="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tabular-nums font-mono-code">0</p>
+                    <span class="text-[11px] font-medium px-2 py-0.5 rounded mt-1.5 inline-block bg-slate-100 text-slate-700 border border-slate-200">Item Catatan</span>
                 </div>
             </div>
 
-            <!-- Download Action Buttons -->
-            <div class="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-xl p-6 text-white shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- Download Action Banner -->
+            <div class="bg-slate-900 rounded-lg p-5 sm:p-6 text-white border border-slate-800 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h3 class="text-lg font-bold">Unduh Berkas Hasil Pemeriksaan</h3>
-                    <p class="text-xs text-blue-200 mt-1">File PDF sudah distabilo digital dan Formulir Word (.docx) sudah terisi lengkap siap dikirim ke author.</p>
+                    <h3 class="text-sm sm:text-base font-bold text-white">Unduh Dokumen Hasil Pemeriksaan Format</h3>
+                    <p class="text-xs text-slate-300 mt-1">
+                        Tersedia berkas PDF ber-stabilo digital pada koordinat kesalahan dan formulir revisi Word (.docx) resmi komite siap dikirim ke author.
+                    </p>
                 </div>
-                <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                    <button id="btnDownloadPdf" class="flex-1 md:flex-initial px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold rounded-lg shadow transition flex items-center justify-center gap-2 text-sm">
-                        <span>📄 Unduh PDF Ber-Stabilo</span>
+                <div class="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto">
+                    <button id="btnDownloadPdf" class="h-11 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded text-xs transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Unduh PDF Ber-Stabilo</span>
                     </button>
-                    <button id="btnDownloadWord" class="flex-1 md:flex-initial px-4 py-2.5 bg-white hover:bg-slate-100 text-blue-900 font-semibold rounded-lg shadow transition flex items-center justify-center gap-2 text-sm">
-                        <span>📝 Unduh Formulir Word (.docx)</span>
+                    <button id="btnDownloadWord" class="h-11 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded text-xs transition-colors flex items-center justify-center gap-2 border border-slate-300">
+                        <svg class="w-4 h-4 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Unduh Formulir Word (.docx)</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Interactive Revision Table (Matching user's template) -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <!-- Committee Review Comments Table (Official Template) -->
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Daftar Komentar Komite & Lokasi Naskah</h3>
-                        <p class="text-xs text-slate-500">Tabel resmi catatan revisi format sesuai standar publikasi IEEE</p>
+                        <h3 class="text-sm sm:text-base font-bold text-slate-900">Daftar Komentar Komite & Lokasi dalam Naskah</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Sesuai format resmi lembar telaah kepatuhan publikasi prosiding IEEE ICoDMI</p>
                     </div>
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <input type="text" id="searchTable" placeholder="Cari dalam komentar/lokasi..." class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs w-full sm:w-64 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <div class="w-full sm:w-auto">
+                        <label for="searchTable" class="sr-only">Cari dalam catatan atau lokasi</label>
+                        <input type="text" id="searchTable" placeholder="Cari dalam catatan atau lokasi..." class="h-9 px-3 border border-slate-300 rounded text-xs w-full sm:w-64 focus:border-slate-500 text-slate-800">
                     </div>
                 </div>
 
-                <!-- Table Content -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
-                        <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-semibold border-b border-slate-200">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-100/80 text-slate-700 uppercase tracking-wider text-[11px] font-semibold border-b border-slate-200">
                             <tr>
-                                <th class="py-3.5 px-4 w-16 text-center">No</th>
-                                <th class="py-3.5 px-4">Committee Comments</th>
-                                <th class="py-3.5 px-4 w-64">Location in Manuscript</th>
+                                <th scope="col" class="py-3 px-4 w-16 text-center">No</th>
+                                <th scope="col" class="py-3 px-4">Committee Comments</th>
+                                <th scope="col" class="py-3 px-4 w-60 sm:w-72">Location in Manuscript</th>
                             </tr>
                         </thead>
                         <tbody id="violationsTableBody" class="divide-y divide-slate-100">
-                            <!-- Rows inserted dynamically -->
+                            <!-- Rows generated via JavaScript -->
                         </tbody>
                     </table>
                 </div>
-                <div id="noViolationsMsg" class="hidden p-8 text-center text-green-600 font-medium">
-                    🎉 Naskah ini 100% memenuhi seluruh ketentuan template IEEE yang diperiksa!
+
+                <!-- Empty state when no violations -->
+                <div id="noViolationsMsg" class="hidden p-8 text-center text-slate-600 space-y-1">
+                    <div class="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-2" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-900">Naskah Memenuhi Seluruh Ketentuan Template IEEE</p>
+                    <p class="text-xs text-slate-500">Tidak ditemukan pelanggaran format pada parameter yang diperiksa.</p>
                 </div>
             </div>
 
-        </div>
+        </section>
 
     </main>
 
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-        ICoDMI IEEE Publication Checker &bull; Institut Pertanian Bogor (IPB) &bull; Powered by Vercel & PyMuPDF
+        ICoDMI IEEE Publication Compliance Console &bull; Institut Pertanian Bogor (IPB University) &bull; Powered by PyMuPDF & Vercel
     </footer>
 
     <!-- JavaScript Application Logic -->
@@ -277,6 +339,14 @@
         // Click to browse
         dropZone.addEventListener('click', () => pdfFileInput.click());
 
+        // Keyboard trigger for dropzone
+        dropZone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                pdfFileInput.click();
+            }
+        });
+
         // File selection handler
         pdfFileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
@@ -287,16 +357,16 @@
         // Drag & Drop handlers
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropZone.classList.add('border-blue-600', 'bg-blue-100/50');
+            dropZone.classList.add('border-slate-600', 'bg-slate-100');
         });
 
         dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('border-blue-600', 'bg-blue-100/50');
+            dropZone.classList.remove('border-slate-600', 'bg-slate-100');
         });
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('border-blue-600', 'bg-blue-100/50');
+            dropZone.classList.remove('border-slate-600', 'bg-slate-100');
             if (e.dataTransfer.files.length > 0) {
                 handleFileSelect(e.dataTransfer.files[0]);
             }
@@ -305,7 +375,7 @@
         function handleFileSelect(file) {
             errorSection.classList.add('hidden');
             if (!file.name.toLowerCase().endsWith('.pdf')) {
-                showError('Format Tidak Didukung', 'Silakan pilih berkas asli dengan ekstensi .pdf', '');
+                showError('Format Berkas Tidak Didukung', 'Harap pilih berkas dokumen asli dengan format ekstensi .pdf', '');
                 return;
             }
             selectedFile = file;
@@ -313,13 +383,19 @@
             
             // Check if file exceeds Vercel's 4.5 MB request payload limit
             if (file.size > 4.5 * 1024 * 1024) {
-                selectedFileInfo.innerHTML = `⚠️ <span class="text-amber-800 font-semibold">${file.name} (${sizeMB} MB)</span>`;
+                selectedFileInfo.innerHTML = `
+                    <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span class="text-amber-900 font-semibold">${escapeHtml(file.name)} (${sizeMB} MB)</span>
+                `;
                 selectedFileInfo.classList.remove('hidden');
                 
-                largeFileText.innerHTML = `Berkas <b>"${file.name}"</b> memiliki ukuran <b>${sizeMB} MB</b>. Layanan hosting cloud Vercel Serverless memiliki batas transfer mutlak sebesar <b>4.5 MB</b>, sehingga berkas ini akan ditolak oleh server jika dipaksakan dikirim langsung.`;
+                largeFileText.innerHTML = `Berkas <b>"${escapeHtml(file.name)}"</b> memiliki ukuran <b>${sizeMB} MB</b>. Layanan serverless Vercel memiliki batas transfer mutlak sebesar <b>4.5 MB</b>, sehingga berkas ini akan ditolak oleh gateway server jika dikirim langsung via peramban web.`;
                 largeFileAlert.classList.remove('hidden');
             } else {
-                selectedFileInfo.innerHTML = `✓ ${file.name} (${sizeMB} MB)`;
+                selectedFileInfo.innerHTML = `
+                    <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>${escapeHtml(file.name)} (${sizeMB} MB)</span>
+                `;
                 selectedFileInfo.classList.remove('hidden');
                 largeFileAlert.classList.add('hidden');
             }
@@ -328,7 +404,7 @@
         }
 
         function showError(title, msg, hint) {
-            errorTitle.innerText = title || 'Berkas Ditolak / Terjadi Kesalahan';
+            errorTitle.innerText = title || 'Pemeriksaan Tidak Dapat Dilanjutkan';
             errorMsg.innerText = msg;
             if (hint) {
                 errorHint.innerHTML = hint;
@@ -349,16 +425,16 @@
             if (selectedFile.size > 4.5 * 1024 * 1024) {
                 const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
                 showError(
-                    'Ukuran Berkas Melebihi Batas Web Vercel (Maksimal 4.5 MB)',
-                    `Berkas "${selectedFile.name}" berukuran ${sizeMB} MB. Serverless Vercel Cloud memiliki batas transfer 4.5 MB, sehingga file ini tidak dapat diproses melalui web online Vercel tanpa dikompresi terlebih dahulu.`,
-                    `💡 <b>2 Solusi Agar Berkas Dapat Diperiksa:</b><br>
-                    1. <b>Gunakan Aplikasi Lokal (Rekomendasi - Tanpa Batas):</b> Buka folder projek di komputer Anda, klik dua kali file <b>Jalankan_IEEE_Checker.bat</b>. Versi lokal tidak memiliki batasan ukuran dan dapat memindai berkas ${sizeMB} MB ini dalam 1-2 detik.<br>
-                    2. <b>Kompres PDF Online:</b> Kompres file ini secara gratis di <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" class="underline font-bold text-red-900">ilovepdf.com/compress_pdf</a> agar ukurannya turun ke bawah 4 MB, lalu unggah kembali ke web ini.`
+                    'Ukuran Berkas Melebihi Batas Web Vercel Cloud (Maksimal 4.5 MB)',
+                    `Berkas "${selectedFile.name}" berukuran ${sizeMB} MB. Infrastruktur serverless web Vercel membatasi muatan permintaan maksimal 4.5 MB, sehingga berkas tidak dapat diproses secara daring tanpa kompresi.`,
+                    `<b>Dua Alternatif Pemecahan:</b><br>
+                    1. <b>Jalankan Aplikasi Lokal (Tanpa Batas Ukuran):</b> Buka folder projek di komputer Anda, klik dua kali <b>Jalankan_IEEE_Checker.bat</b>. Versi desktop lokal memproses berkas ukuran ${sizeMB} MB dalam 1 hingga 2 detik secara luring.<br>
+                    2. <b>Kompres Berkas PDF:</b> Kurangi ukuran file di <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" class="underline font-bold text-red-900">ilovepdf.com/compress_pdf</a> agar berukuran di bawah 4 MB, kemudian unggah kembali.`
                 );
                 return;
             }
 
-            // Form data
+            // Prepare Form Data
             const formData = new FormData();
             formData.append('file', selectedFile);
             formData.append('conf_name', document.getElementById('confName').value);
@@ -367,7 +443,7 @@
             formData.append('max_pages', document.getElementById('maxPages').value);
             formData.append('hard_max_pages', document.getElementById('hardMaxPages').value);
 
-            // UI states
+            // Update UI states
             loadingSection.classList.remove('hidden');
             resultsSection.classList.add('hidden');
             errorSection.classList.add('hidden');
@@ -386,9 +462,9 @@
                 } catch (jsonErr) {
                     if (response.status === 413 || responseText.includes('Request Entity Too Large') || responseText.includes('Payload Too Large')) {
                         showError(
-                            'Ukuran Berkas Melebihi Batas Web Vercel (Maks. 4.5 MB)',
-                            `Berkas berukuran ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB melebihi batas transfer serverless Vercel.`,
-                            '💡 <b>Solusi:</b> Harap kompres berkas PDF terlebih dahulu (menjadi &lt; 4 MB) atau gunakan aplikasi desktop lokal lewat <b>Jalankan_IEEE_Checker.bat</b>.'
+                            'Ukuran Berkas Melebihi Batas Web Vercel Cloud (Maks. 4.5 MB)',
+                            `Berkas berukuran ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB melebihi kuota muatan gateway Vercel.`,
+                            '<b>Solusi:</b> Silakan kompres berkas PDF naskah Anda terlebih dahulu menjadi di bawah 4 MB, atau gunakan eksekutor lokal melalui berkas <b>Jalankan_IEEE_Checker.bat</b>.'
                         );
                         return;
                     }
@@ -397,9 +473,9 @@
 
                 if (!response.ok) {
                     showError(
-                        'Pemeriksaan Format Gagal / Berkas Ditolak',
-                        data.detail || 'Terjadi kesalahan saat memeriksa berkas.',
-                        '💡 <b>Petunjuk:</b> Sistem ini dirancang khusus untuk memvalidasi naskah paper ilmiah IEEE (ICoDMI) yang memuat struktur standar (Judul, Daftar Penulis, Abstrak, Pendahuluan, dan Referensi). Berkas non-paper seperti soal latihan, modul, formulir, atau hasil scan gambar akan ditolak secara otomatis.'
+                        'Pemeriksaan Format Gagal atau Berkas Ditolak',
+                        data.detail || 'Terjadi kendala teknis saat memverifikasi format naskah.',
+                        '<b>Petunjuk:</b> Sistem ini dirancang untuk memvalidasi naskah paper ilmiah IEEE (ICoDMI) yang memuat struktur standar (Judul, Daftar Penulis, Abstrak, Pendahuluan, dan Referensi). Berkas non-paper seperti soal ujian, modul perkuliahan, formulir, atau berkas hasil scan gambar akan ditolak otomatis.'
                     );
                     return;
                 }
@@ -409,9 +485,9 @@
 
             } catch (error) {
                 showError(
-                    'Koneksi / Proses Gagal',
+                    'Koneksi atau Proses Terhenti',
                     error.message,
-                    '💡 Jika kendala berlanjut, Anda dapat menjalankan aplikasi secara offline di komputer Anda menggunakan file <b>Jalankan_IEEE_Checker.bat</b>.'
+                    'Jika kendala jaringan berlanjut, Anda dapat menjalankan aplikasi secara luring di komputer Anda menggunakan berkas <b>Jalankan_IEEE_Checker.bat</b>.'
                 );
             } finally {
                 loadingSection.classList.add('hidden');
@@ -422,35 +498,37 @@
         function renderResults(data) {
             resultsSection.classList.remove('hidden');
 
-            // Metrics
+            // Set Page Metric
             document.getElementById('resTotalPages').innerText = data.metadata.total_pages + ' Hal';
             const pageBadge = document.getElementById('resPageBadge');
             if (data.metadata.is_extra_pages) {
                 pageBadge.innerText = 'Extra Pages (7-8 Hal)';
-                pageBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1 inline-block bg-amber-100 text-amber-800 border border-amber-300';
+                pageBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded mt-1.5 inline-block bg-amber-50 text-amber-800 border border-amber-300';
             } else if (data.metadata.is_page_count_valid) {
                 pageBadge.innerText = 'Standar Reguler';
-                pageBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1 inline-block bg-green-100 text-green-700 border border-green-200';
+                pageBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded mt-1.5 inline-block bg-emerald-50 text-emerald-800 border border-emerald-300';
             } else {
                 pageBadge.innerText = 'Kurang / > 8 Hal';
-                pageBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1 inline-block bg-red-100 text-red-700 border border-red-200';
+                pageBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded mt-1.5 inline-block bg-red-50 text-red-800 border border-red-300';
             }
 
+            // Set Paper Size Metric
             document.getElementById('resPaperSize').innerText = data.metadata.paper_size_name;
             const sizeBadge = document.getElementById('resSizeBadge');
             if (data.metadata.is_a4) {
                 sizeBadge.innerText = 'A4 Valid';
-                sizeBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block bg-green-100 text-green-700';
+                sizeBadge.className = 'text-[11px] font-medium px-2 py-0.5 rounded mt-1.5 inline-block bg-emerald-50 text-emerald-800 border border-emerald-300';
             } else {
                 sizeBadge.innerText = 'Bukan A4';
-                sizeBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block bg-red-100 text-red-700';
+                sizeBadge.className = 'text-[11px] font-medium px-2 py-0.5 rounded mt-1.5 inline-block bg-red-50 text-red-800 border border-red-300';
             }
 
+            // Set Counts
             document.getElementById('resFatalCount').innerText = data.summary.fatal_count;
             document.getElementById('resWarningCount').innerText = data.summary.warning_count;
             document.getElementById('resTotalViolations').innerText = data.summary.total_violations;
 
-            // Render Table
+            // Render Table Content
             const tbody = document.getElementById('violationsTableBody');
             tbody.innerHTML = '';
 
@@ -461,28 +539,30 @@
                 noMsg.classList.add('hidden');
                 data.violations.forEach((v) => {
                     const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition-colors';
+                    tr.className = 'hover:bg-slate-50/80 transition-colors';
 
                     const isFatal = v.severity === 'Fatal';
-                    const badgeClass = isFatal ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-800 border border-amber-200';
+                    const badgeClass = isFatal 
+                        ? 'bg-red-50 text-red-800 border border-red-200' 
+                        : 'bg-amber-50 text-amber-800 border border-amber-200';
 
                     tr.innerHTML = `
-                        <td class="py-3 px-4 text-center font-medium text-slate-500">${v.no}</td>
+                        <td class="py-3 px-4 text-center font-medium text-slate-500 tabular-nums font-mono-code">${v.no}</td>
                         <td class="py-3 px-4">
-                            <span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded ${badgeClass} mr-1.5">[${v.category}]</span>
-                            <span class="text-slate-800">${escapeHtml(v.comment)}</span>
+                            <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1.5">[${v.category}]</span>
+                            <span class="text-slate-800 leading-relaxed">${escapeHtml(v.comment)}</span>
                         </td>
-                        <td class="py-3 px-4 font-mono text-xs text-slate-600 bg-slate-50/70">${escapeHtml(v.location)}</td>
+                        <td class="py-3 px-4 font-mono-code text-[11px] text-slate-600 bg-slate-50/60">${escapeHtml(v.location)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
 
-            // Scroll to results
-            resultsSection.scrollIntoView({ behavior: 'smooth' });
+            // Smooth scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // Search in table
+        // Search Filter in Table
         document.getElementById('searchTable').addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
             const rows = document.querySelectorAll('#violationsTableBody tr');
@@ -492,7 +572,7 @@
             });
         });
 
-        // Download Base64 helper
+        // Download Base64 Helper
         function downloadBase64(base64Data, filename, mimeType) {
             const byteCharacters = atob(base64Data);
             const byteNumbers = new Array(byteCharacters.length);
@@ -508,16 +588,16 @@
             URL.revokeObjectURL(link.href);
         }
 
-        // Download handlers
+        // Download Action Handlers
         document.getElementById('btnDownloadPdf').addEventListener('click', () => {
             if (!lastResultData || !lastResultData.annotated_pdf_base64) return;
-            const baseName = selectedFile.name.replace(/\.pdf$/i, '');
+            const baseName = selectedFile ? selectedFile.name.replace(/\.pdf$/i, '') : 'manuscript';
             downloadBase64(lastResultData.annotated_pdf_base64, `${baseName}_annotated.pdf`, 'application/pdf');
         });
 
         document.getElementById('btnDownloadWord').addEventListener('click', () => {
             if (!lastResultData || !lastResultData.word_docx_base64) return;
-            const baseName = selectedFile.name.replace(/\.pdf$/i, '');
+            const baseName = selectedFile ? selectedFile.name.replace(/\.pdf$/i, '') : 'manuscript';
             downloadBase64(
                 lastResultData.word_docx_base64, 
                 `${baseName}_review_sheet.docx`, 
@@ -527,10 +607,9 @@
 
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = text || '';
             return div.innerHTML;
         }
     </script>
 </body>
 </html>
-
