@@ -45,12 +45,12 @@ async def check_manuscript(
     conf_name: str = Form("ICoDMI 2026 (SSMI IPB)")
 ):
     if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Hanya berkas berformat PDF (.pdf) yang didukung.")
+        raise HTTPException(status_code=400, detail="Only PDF format files (.pdf) are supported.")
         
     try:
         content = await file.read()
         if len(content) == 0:
-            raise HTTPException(status_code=400, detail="Berkas yang diunggah kosong (0 bytes).")
+            raise HTTPException(status_code=400, detail="Uploaded file is empty (0 bytes).")
             
         # 1. Security & PDF Safety Validation
         ok_safety, msg_safety = validate_pdf_safety(content, file.filename)
@@ -61,7 +61,7 @@ async def check_manuscript(
         try:
             doc = pymupdf.open(stream=content, filetype="pdf")
         except Exception:
-            raise HTTPException(status_code=400, detail="Gagal membuka berkas PDF. Berkas mungkin korup atau tidak valid.")
+            raise HTTPException(status_code=400, detail="Failed to open PDF file. The file may be corrupted or invalid.")
             
         # 2. Gatekeeper: Academic Manuscript Eligibility Check
         ok_eligibility, msg_eligibility, info = validate_manuscript_eligibility(doc, file.filename)

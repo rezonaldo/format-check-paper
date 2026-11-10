@@ -40,14 +40,14 @@ def validate_pdf_safety(file_bytes: bytes, filename: str) -> Tuple[bool, str]:
     """
     # 1. Check file size
     if len(file_bytes) > MAX_FILE_SIZE_BYTES:
-        return False, f"Ukuran berkas melebihi batas maksimal ({MAX_FILE_SIZE_MB} MB). Harap perkecil ukuran berkas Anda."
+        return False, f"File size exceeds maximum allowable limit ({MAX_FILE_SIZE_MB} MB). Please compress your PDF file."
     
     if len(file_bytes) < 100:
-        return False, "Berkas rusak atau terlalu kecil untuk menjadi dokumen PDF yang valid."
+        return False, "Corrupted or invalid PDF file (file is too small to be a valid PDF)."
 
     # 2. Check Magic Bytes for PDF (%PDF-)
     if not file_bytes.startswith(b"%PDF-"):
-        return False, "Format berkas tidak valid. Berkas bukan dokumen PDF asli (header file tidak valid)."
+        return False, "Invalid file format. The uploaded file is not a valid PDF document (missing %PDF- header)."
 
     return True, ""
 
@@ -59,7 +59,7 @@ def validate_manuscript_eligibility(doc: pymupdf.Document, filename: str = "") -
     """
     # 1. Check Encryption / Password Protection
     if doc.is_encrypted or doc.needs_pass:
-        return False, "Berkas PDF dilindungi kata sandi (password-protected). Harap unggah naskah yang tidak terkunci.", {}
+        return False, "PDF file is password-protected or encrypted. Please submit an unlocked manuscript.", {}
 
     total_pages = len(doc)
     
@@ -67,8 +67,8 @@ def validate_manuscript_eligibility(doc: pymupdf.Document, filename: str = "") -
     # IEEE conference papers are practically between 3 and 12 pages maximum.
     if total_pages > 15:
         return False, (
-            f"Dokumen memiliki {total_pages} halaman. Naskah konferensi IEEE standar memiliki 4-6 halaman "
-            f"(maksimal 10 halaman). Berkas ini kemungkinan merupakan buku, modul kuliah, atau kumpulan soal."
+            f"The document has {total_pages} pages. Standard IEEE conference papers are 4-6 pages "
+            f"(up to 8 pages maximum for extra pages). This file appears to be a thesis, book, or non-conference document."
         ), {"total_pages": total_pages}
 
     # 3. Check Text Layer Extractability (Blank / Pure Scanned Image Detection)
@@ -79,9 +79,8 @@ def validate_manuscript_eligibility(doc: pymupdf.Document, filename: str = "") -
     cleaned_total_text = total_text.strip()
     if len(cleaned_total_text) < 150:
         return False, (
-            "Dokumen tidak memiliki lapisan teks yang dapat dibaca (kemungkinan berupa pindaian gambar/scan murni "
-            "atau dokumen kosong). Sistem memerlukan naskah asli dalam format teks (bukan hasil scan kamera) "
-            "agar dapat memeriksa kepatuhan format IEEE."
+            "The document contains no extractable text layer (likely a pure scanned image or blank document). "
+            "The system requires an original digital text-based PDF (not camera scans) to verify IEEE compliance."
         ), {"text_length": len(cleaned_total_text)}
 
     # 4. Check First Two Pages for Academic Anchors
@@ -92,14 +91,14 @@ def validate_manuscript_eligibility(doc: pymupdf.Document, filename: str = "") -
     lower_first_text = first_two_pages_text.lower()
     lower_full_text = total_text.lower()
 
-    # Check for prominent negative indicators (soal latihan, ujian, tugas kuliah, dll)
+    # Check for prominent negative indicators (exam papers, problem sets, student IDs, etc.)
     combined_name_text = (filename + " " + lower_first_text[:1000]).lower()
     for neg_pattern in NEGATIVE_MANUSCRIPT_KEYWORDS:
         if re.search(neg_pattern, combined_name_text):
             match = re.search(neg_pattern, combined_name_text).group(0)
             return False, (
-                f"Dokumen terdeteksi sebagai non-naskah ilmiah (ditemukan kata penanda: \"{match}\"). "
-                "Sistem ini khusus digunakan untuk memeriksa naskah final paper ilmiah IEEE (ICoDMI)."
+                f"Document recognized as a non-academic file (detected marker: \"{match}\"). "
+                "This system is strictly reserved for IEEE conference research papers (ICoDMI)."
             ), {"negative_match": match}
 
     # Academic Anchor Detection:
@@ -129,9 +128,9 @@ def validate_manuscript_eligibility(doc: pymupdf.Document, filename: str = "") -
     if score < 2:
         missing = [a for a in ["Abstract", "Introduction", "Keywords", "References"] if a not in anchors_found]
         return False, (
-            "Dokumen yang diunggah tidak terdeteksi sebagai naskah paper ilmiah/konferensi IEEE. "
-            f"Sistem tidak menemukan struktur naskah ilmiah penting seperti: {', '.join(missing)}. "
-            "Pastikan berkas yang diunggah adalah naskah artikel ilmiah yang memuat Judul, Penulis, Abstrak, dan Referensi."
+            "The uploaded file is not recognized as a valid IEEE academic manuscript. "
+            f"Essential structural sections were not found: {', '.join(missing)}. "
+            "Please ensure your file is a research paper containing Title, Authors, Abstract, and References."
         ), {"anchors_found": anchors_found, "score": score}
 
     return True, "", {

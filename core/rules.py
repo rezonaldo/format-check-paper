@@ -155,15 +155,16 @@ class IEEEComplianceChecker:
         if self.target_size == "A4" and not is_a4:
             if is_letter:
                 msg = (
-                    f"Ukuran kertas terdeteksi US Letter ({p_width:.1f} x {p_height:.1f} pt). "
-                    "Prosiding IEEE ICoDMI (Region 10) mewajibkan ukuran A4 (210 x 297 mm / 595 x 842 pt) "
-                    "sesuai template resmi. Harap ubah Page Setup dokumen dari Letter menjadi A4 agar format batas "
-                    "margin dan kolom tidak bergeser saat digabungkan ke prosiding IEEE Xplore."
+                    f"Paper size detected as US Letter ({p_width:.1f} x {p_height:.1f} pt). "
+                    "IEEE ICoDMI (Region 10) proceedings require A4 size (210 x 297 mm / 595 x 842 pt) "
+                    "in accordance with the official conference template. Please change Page Setup from Letter to A4 "
+                    "so margins and column boundaries do not shift when compiled into the IEEE Xplore proceedings."
                 )
             else:
                 msg = (
-                    f"Ukuran kertas terdeteksi kustom ({p_width:.1f} x {p_height:.1f} pt). "
-                    "Template resmi IEEE ICoDMI mewajibkan standar ukuran A4 (210 x 297 mm / 595 x 842 pt). Harap atur ukuran kertas dokumen ke A4."
+                    f"Paper size detected as custom dimensions ({p_width:.1f} x {p_height:.1f} pt). "
+                    "The official IEEE ICoDMI conference template mandates standard A4 size (210 x 297 mm / 595 x 842 pt). "
+                    "Please adjust the document page setup to A4."
                 )
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
@@ -175,12 +176,12 @@ class IEEEComplianceChecker:
                 severity="Fatal"
             ))
             
-        # Rule 1.2: Page Count Limit Check (Standar 4-6 Hal, Extra Pages maks. 8 Hal)
+        # Rule 1.2: Page Count Limit Check (Standard 4-6 pages, Extra Pages max 8 pages)
         if total_pages < self.min_pages:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
-                category="Page Count",
-                comment=f"Naskah hanya berjumlah {total_pages} halaman. Ketentuan IEEE ICoDMI mensyaratkan naskah minimal {self.min_pages} halaman.",
+                category="Page Count (Below Minimum)",
+                comment=f"The manuscript has {total_pages} page(s). IEEE ICoDMI formatting policy requires a minimum of {self.min_pages} pages for regular conference papers.",
                 location=f"Overall Document ({total_pages} pages)",
                 page_num=total_pages,
                 rect=pymupdf.Rect(0, p_height - 50, p_width, p_height),
@@ -191,9 +192,9 @@ class IEEEComplianceChecker:
                 no=len(self.violations) + 1,
                 category="Page Count (Extra Pages)",
                 comment=(
-                    f"Naskah berjumlah {total_pages} halaman (melebihi batas standar reguler {self.max_pages} halaman). "
-                    f"Naskah masuk kategori 'Extra Pages' ({total_pages - self.max_pages} halaman tambahan, maksimal diperbolehkan {self.hard_max_pages} halaman). "
-                    "Naskah tetap dapat diproses, namun penulis wajib melunasi biaya tambahan (extra page fee) sesuai ketentuan konferensi ICoDMI."
+                    f"The manuscript has {total_pages} pages, which exceeds the standard regular paper length ({self.max_pages} pages). "
+                    f"This manuscript falls into the 'Extra Pages' category ({total_pages - self.max_pages} additional page(s), maximum {self.hard_max_pages} pages permitted). "
+                    "The paper can proceed for publication, but authors must settle the applicable extra page fee according to ICoDMI conference guidelines."
                 ),
                 location=f"Overall Document ({total_pages} pages)",
                 page_num=total_pages,
@@ -203,11 +204,11 @@ class IEEEComplianceChecker:
         elif total_pages > self.hard_max_pages:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
-                category="Page Count (Melebihi Batas Maksimal)",
+                category="Page Count (Exceeds Maximum Limit)",
                 comment=(
-                    f"Naskah memiliki {total_pages} halaman. Melebihi batas maksimal absolut yang diperbolehkan di IEEE ICoDMI "
-                    f"(maksimal {self.hard_max_pages} halaman termasuk extra pages). "
-                    f"Naskah TIDAK DAPAT DITERBITKAN sebelum dipangkas maksimal menjadi {self.hard_max_pages} halaman."
+                    f"The manuscript contains {total_pages} pages, which exceeds the absolute maximum length permitted by IEEE ICoDMI "
+                    f"({self.hard_max_pages} pages including extra pages). "
+                    f"The manuscript CANNOT be published unless it is condensed to at most {self.hard_max_pages} pages."
                 ),
                 location=f"Overall Document ({total_pages} pages)",
                 page_num=total_pages,
@@ -606,7 +607,7 @@ class IEEEComplianceChecker:
                 break
 
         # 10. In-text reference citation with "Ref. [1]" in middle of sentence
-        # IEEE rule: "Refer simply to the reference number, as in [3]—do not use 'Ref. [3]' or 'reference [3]' except at the beginning of a sentence."
+        # IEEE rule: "Refer simply to the reference number, as in [3], do not use 'Ref. [3]' or 'reference [3]' except at the beginning of a sentence."
         ref_mid_matches = list(re.finditer(r'(?<![\.\?\!\n]\s)(Ref\.\s*\[\d+\]|reference\s*\[\d+\])', page_text))
         for match in ref_mid_matches:
             target_str = match.group(1)
@@ -618,7 +619,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Reference Callout",
-                    comment=f"Found \"{target_str}\" in middle of sentence. IEEE rule: 'Refer simply to the reference number, as in [3]—do not use \"Ref. [3]\" or \"reference [3]\" except at the beginning of a sentence.'",
+                    comment=f"Found \"{target_str}\" in middle of sentence. IEEE rule: 'Refer simply to the reference number, as in [3], do not use \"Ref. [3]\" or \"reference [3]\" except at the beginning of a sentence.'",
                     location=loc,
                     page_num=page_num,
                     rect=r,

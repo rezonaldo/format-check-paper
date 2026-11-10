@@ -107,7 +107,7 @@ def group_violations(violations: List[Violation]) -> List[Dict[str, Any]]:
         elif category == "Template Guideline Text":
             comment = f"Found leftover template placeholder text: {snip_text}. IEEE explicitly states: 'Please ensure that all template text is removed prior to submission.'"
         elif category == "Reference Callout":
-            comment = f"Found {snip_text} in middle of sentence. IEEE rule: 'Refer simply to the reference number, as in [3]—do not use \"Ref. [3]\" or \"reference [3]\" except at the beginning of a sentence.'"
+            comment = f"Found {snip_text} in middle of sentence. IEEE rule: 'Refer simply to the reference number, as in [3], do not use \"Ref. [3]\" or \"reference [3]\" except at the beginning of a sentence.'"
         else:
             if items[0].snippet and items[0].snippet in first_comment and snip_text:
                 comment = first_comment.replace(f'"{items[0].snippet}"', snip_text)
