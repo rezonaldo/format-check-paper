@@ -17,7 +17,7 @@ import pymupdf
 
 from core.rules import IEEEComplianceChecker
 from core.highlighter import annotate_pdf
-from core.report_generator import generate_word_report
+from core.report_generator import generate_word_report, group_violations
 from core.validator import validate_pdf_safety, validate_manuscript_eligibility
 
 app = FastAPI(title="IEEE Manuscript Compliance Checker API")
@@ -120,6 +120,9 @@ async def check_manuscript(
                 "severity": v.severity
             })
             
+        # Grouped violations for consolidated committee review sheet
+        grouped_data = group_violations(violations)
+            
         return JSONResponse(content={
             "success": True,
             "filename": file.filename,
@@ -134,10 +137,12 @@ async def check_manuscript(
             },
             "summary": {
                 "total_violations": len(violations),
+                "total_groups": len(grouped_data),
                 "fatal_count": sum(1 for v in violations if v.severity == "Fatal"),
                 "warning_count": sum(1 for v in violations if v.severity == "Warning")
             },
             "violations": violations_data,
+            "grouped_violations": grouped_data,
             "annotated_pdf_base64": annotated_pdf_base64,
             "word_docx_base64": word_docx_base64
         })

@@ -215,6 +215,23 @@ class IEEEComplianceChecker:
                 severity="Fatal"
             ))
 
+        # Locate the References / Bibliography section start boundary
+        # In-text style/grammar/citation rules must NOT run on the bibliography itself!
+        ref_info = None
+        for p_idx in range(total_pages):
+            p = doc[p_idx]
+            for b in p.get_text("blocks"):
+                b_text = b[4].strip()
+                if re.match(r'^(\b[IVXLCDM]+\.|\d+\.)?\s*(REFERENCES|References|DAFTAR PUSTAKA)\s*$', b_text, re.IGNORECASE):
+                    ref_info = {
+                        "page": p_idx + 1,
+                        "x0": b[0],
+                        "y0": b[1]
+                    }
+                    break
+            if ref_info:
+                break
+
         # Check pages one by one
         for page_idx in range(total_pages):
             page_num = page_idx + 1
@@ -233,7 +250,7 @@ class IEEEComplianceChecker:
                 self._check_first_page(page, page_text)
                 
             # Rule 5: Equations, Figures, Tables & Common Style Rules
-            self._check_style_and_grammar(page, page_num, page_text)
+            self._check_style_and_grammar(page, page_num, page_text, ref_info)
             
         return self.violations, self.metadata
 
@@ -359,7 +376,30 @@ class IEEEComplianceChecker:
                 severity="Fatal"
             ))
 
-    def _check_style_and_grammar(self, page: pymupdf.Page, page_num: int, page_text: str):
+    def _is_in_references(self, page_num: int, rect: Optional[pymupdf.Rect], page_width: float, ref_info: Optional[dict]) -> bool:
+        """Determines if a given rectangle on a page is inside the bibliography/references section."""
+        if not ref_info or not rect:
+            return False
+        if page_num > ref_info["page"]:
+            return True
+        if page_num < ref_info["page"]:
+            return False
+            
+        # Same page as references heading
+        mid_x = page_width / 2.0
+        ref_in_right = ref_info["x0"] >= mid_x - 30
+        rect_in_right = rect.x0 >= mid_x - 30
+        
+        if ref_in_right:
+            # References starts in right column; left column is body text
+            return rect_in_right and rect.y0 >= ref_info["y0"] - 5
+        else:
+            # References starts in left column; right column is bibliography too
+            if rect_in_right:
+                return True
+            return rect.y0 >= ref_info["y0"] - 5
+
+    def _check_style_and_grammar(self, page: pymupdf.Page, page_num: int, page_text: str, ref_info: Optional[dict] = None):
         """Checks for specific IEEE editorial rules (Equations, Figures, Tables, Citations, Language)."""
         p_width = page.rect.width
         p_height = page.rect.height
@@ -371,6 +411,8 @@ class IEEEComplianceChecker:
             target_str = match.group(1)
             rects = page.search_for(target_str)
             for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
                 loc = get_location_description(page_num, r, p_width, p_height)
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
@@ -392,6 +434,8 @@ class IEEEComplianceChecker:
             # Skip if inside table or code snippet if possible
             rects = page.search_for(target_str)
             for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
                 loc = get_location_description(page_num, r, p_width, p_height)
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
@@ -411,6 +455,20 @@ class IEEEComplianceChecker:
             target_str = match.group(1)
             rects = page.search_for(target_str)
             for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
+                loc = get_location_description(page_num, r, p_width, p_height)
+                self.violations.append(Violation(
+                    no=len(self.violations) + 1,
+                    category="Table Style",
+                    comment=f"Found \"{target_str}\". IEEE template prescribes uppercase Roman numerals for table titles: 'TABLE I. TABLE TYPE STYLES' centered above the table.",
+                    location=loc,
+                    page_num=page_num,
+                    rect=r,
+                    severity="Warning",
+                    snippet=target_str
+                ))
+                break
                 loc = get_location_description(page_num, r, p_width, p_height)
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
@@ -532,6 +590,8 @@ class IEEEComplianceChecker:
             target_str = match.group(1)
             rects = page.search_for(target_str)
             for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
                 loc = get_location_description(page_num, r, p_width, p_height)
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
@@ -552,6 +612,8 @@ class IEEEComplianceChecker:
             target_str = match.group(1)
             rects = page.search_for(target_str)
             for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
                 loc = get_location_description(page_num, r, p_width, p_height)
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,

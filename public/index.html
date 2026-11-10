@@ -462,12 +462,23 @@
                 <div class="ss-card overflow-hidden">
                     <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                            <h3 class="text-sm sm:text-base font-bold text-slate-900">Daftar Komentar Komite & Lokasi dalam Naskah</h3>
+                            <h3 class="text-sm sm:text-base font-bold text-slate-900">Daftar Komentar Komite & Respon Author</h3>
                             <p class="text-xs text-slate-500 mt-0.5">Sesuai format resmi lembar telaah kepatuhan publikasi prosiding IEEE ICoDMI</p>
                         </div>
-                        <div class="w-full sm:w-auto">
-                            <label for="searchTable" class="sr-only">Cari dalam catatan atau lokasi</label>
-                            <input type="text" id="searchTable" placeholder="Cari dalam catatan atau lokasi..." class="h-9 px-3 border border-slate-300 rounded text-xs w-full sm:w-64 focus:border-slate-800 text-slate-800">
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                            <!-- Toggle View Mode: Grouped vs Itemized -->
+                            <div class="inline-flex rounded p-0.5 bg-slate-100 border border-slate-300 text-xs font-semibold self-start sm:self-auto" role="group" aria-label="Mode Tampilan Tabel">
+                                <button type="button" id="btnModeGrouped" class="px-2.5 py-1 rounded bg-white text-slate-900 shadow-xs font-semibold transition-all">
+                                    Terkonsolidasi (Grup)
+                                </button>
+                                <button type="button" id="btnModeItemized" class="px-2.5 py-1 rounded text-slate-600 hover:text-slate-900 transition-all">
+                                    Rinci (Per Titik)
+                                </button>
+                            </div>
+                            <div>
+                                <label for="searchTable" class="sr-only">Cari dalam catatan atau lokasi</label>
+                                <input type="text" id="searchTable" placeholder="Cari dalam catatan/lokasi..." class="h-8 px-3 border border-slate-300 rounded text-xs w-full sm:w-56 focus:border-slate-800 text-slate-800">
+                            </div>
                         </div>
                     </div>
 
@@ -475,9 +486,10 @@
                         <table class="w-full text-left text-xs border-collapse">
                             <thead class="bg-slate-100 text-slate-700 uppercase tracking-wider text-[11px] font-semibold border-b border-slate-200">
                                 <tr>
-                                    <th scope="col" class="py-3 px-4 w-16 text-center">No</th>
-                                    <th scope="col" class="py-3 px-4">Committee Comments</th>
-                                    <th scope="col" class="py-3 px-4 w-60 sm:w-72">Location in Manuscript</th>
+                                    <th scope="col" class="py-3 px-3.5 w-14 text-center">No</th>
+                                    <th scope="col" class="py-3 px-4">Format Comments</th>
+                                    <th scope="col" class="py-3 px-4 w-52 sm:w-60">Location in Manuscript</th>
+                                    <th id="thAuthorResponse" scope="col" class="py-3 px-4 w-48 sm:w-56">Authors' Response</th>
                                 </tr>
                             </thead>
                             <tbody id="violationsTableBody" class="divide-y divide-slate-100">
@@ -717,6 +729,32 @@
             }
         });
 
+        let currentTableMode = 'grouped'; // 'grouped' (default) or 'itemized'
+
+        const btnModeGrouped = document.getElementById('btnModeGrouped');
+        const btnModeItemized = document.getElementById('btnModeItemized');
+        const thAuthorResponse = document.getElementById('thAuthorResponse');
+
+        btnModeGrouped.addEventListener('click', () => {
+            if (currentTableMode !== 'grouped') {
+                currentTableMode = 'grouped';
+                btnModeGrouped.className = 'px-2.5 py-1 rounded bg-white text-slate-900 shadow-xs font-semibold transition-all';
+                btnModeItemized.className = 'px-2.5 py-1 rounded text-slate-600 hover:text-slate-900 transition-all';
+                thAuthorResponse.classList.remove('hidden');
+                if (lastResultData) renderTable(lastResultData);
+            }
+        });
+
+        btnModeItemized.addEventListener('click', () => {
+            if (currentTableMode !== 'itemized') {
+                currentTableMode = 'itemized';
+                btnModeItemized.className = 'px-2.5 py-1 rounded bg-white text-slate-900 shadow-xs font-semibold transition-all';
+                btnModeGrouped.className = 'px-2.5 py-1 rounded text-slate-600 hover:text-slate-900 transition-all';
+                thAuthorResponse.classList.add('hidden');
+                if (lastResultData) renderTable(lastResultData);
+            }
+        });
+
         function renderResults(data) {
             resultsSection.classList.remove('hidden');
 
@@ -748,20 +786,76 @@
             // Set Counts
             document.getElementById('resFatalCount').innerText = data.summary.fatal_count;
             document.getElementById('resWarningCount').innerText = data.summary.warning_count;
-            document.getElementById('resTotalViolations').innerText = data.summary.total_violations;
+            
+            const totalGroups = data.summary.total_groups || (data.grouped_violations ? data.grouped_violations.length : data.summary.total_violations);
+            document.getElementById('resTotalViolations').innerText = totalGroups;
 
             // Render Table Content
+            renderTable(data);
+
+            // Smooth scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderTable(data) {
             const tbody = document.getElementById('violationsTableBody');
             tbody.innerHTML = '';
 
             const noMsg = document.getElementById('noViolationsMsg');
-            if (data.violations.length === 0) {
+            if (!data.violations || data.violations.length === 0) {
                 noMsg.classList.remove('hidden');
+                return;
+            }
+            noMsg.classList.add('hidden');
+
+            if (currentTableMode === 'grouped' && data.grouped_violations) {
+                thAuthorResponse.classList.remove('hidden');
+                data.grouped_violations.forEach((g) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition-colors align-top';
+
+                    const isFatal = g.severity === 'Fatal';
+                    const badgeClass = isFatal 
+                        ? 'bg-red-50 text-red-800 border border-red-200' 
+                        : 'bg-amber-50 text-amber-800 border border-amber-200';
+
+                    const countBadge = g.count > 1 
+                        ? `<span class="inline-block text-[10px] font-semibold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded ml-1">${g.count} temuan</span>` 
+                        : '';
+
+                    let detailsHtml = '';
+                    if (g.count > 1 && g.items) {
+                        const itemsList = g.items.map(it => `<li>• <b>${escapeHtml(it.snippet || 'Item')}</b>: ${escapeHtml(it.location)}</li>`).join('');
+                        detailsHtml = `
+                            <details class="mt-2 text-[11px] text-slate-500">
+                                <summary class="cursor-pointer text-slate-700 hover:text-slate-900 font-medium select-none">Rincian ${g.count} titik lokasi stabilo ▾</summary>
+                                <ul class="mt-1 pl-2 space-y-0.5 text-slate-600 font-mono-code text-[10.5px]">
+                                    ${itemsList}
+                                </ul>
+                            </details>
+                        `;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="py-3 px-3.5 text-center font-medium text-slate-500 tabular-nums font-mono-code">${g.no}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1">[${g.category}]</span>
+                            ${countBadge}
+                            <div class="text-slate-800 leading-relaxed mt-1">${escapeHtml(g.comment)}</div>
+                            ${detailsHtml}
+                        </td>
+                        <td class="py-3 px-4 font-mono-code text-[11px] text-slate-600 bg-slate-50/50">${escapeHtml(g.location)}</td>
+                        <td class="py-3 px-4 text-slate-400 italic text-[11px] bg-slate-50/20">
+                            (Disediakan di formulir Word untuk respon author)
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             } else {
-                noMsg.classList.add('hidden');
+                thAuthorResponse.classList.add('hidden');
                 data.violations.forEach((v) => {
                     const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition-colors';
+                    tr.className = 'hover:bg-slate-50 transition-colors align-top';
 
                     const isFatal = v.severity === 'Fatal';
                     const badgeClass = isFatal 
@@ -769,19 +863,16 @@
                         : 'bg-amber-50 text-amber-800 border border-amber-200';
 
                     tr.innerHTML = `
-                        <td class="py-3 px-4 text-center font-medium text-slate-500 tabular-nums font-mono-code">${v.no}</td>
+                        <td class="py-3 px-3.5 text-center font-medium text-slate-500 tabular-nums font-mono-code">${v.no}</td>
                         <td class="py-3 px-4">
-                            <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1.5">[${v.category}]</span>
-                            <span class="text-slate-800 leading-relaxed">${escapeHtml(v.comment)}</span>
+                            <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1">[${v.category}]</span>
+                            <div class="text-slate-800 leading-relaxed mt-1">${escapeHtml(v.comment)}</div>
                         </td>
-                        <td class="py-3 px-4 font-mono-code text-[11px] text-slate-600 bg-slate-50/60">${escapeHtml(v.location)}</td>
+                        <td class="py-3 px-4 font-mono-code text-[11px] text-slate-600 bg-slate-50/50">${escapeHtml(v.location)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
-
-            // Smooth scroll to results
-            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         // Search Filter in Table
