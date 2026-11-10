@@ -475,9 +475,18 @@
                                     Rinci (Per Titik)
                                 </button>
                             </div>
+
+                            <!-- One-Click Copy Entire Table for Google Docs / Word -->
+                            <button type="button" id="btnCopyTableForDocs" class="h-8 px-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 rounded text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-all" title="Salin seluruh isi tabel agar langsung rapi saat di-paste di Google Docs atau Word">
+                                <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                                </svg>
+                                <span id="btnCopyTableLabel">Salin Tabel untuk Docs</span>
+                            </button>
+
                             <div>
                                 <label for="searchTable" class="sr-only">Cari dalam catatan atau lokasi</label>
-                                <input type="text" id="searchTable" placeholder="Cari dalam catatan/lokasi..." class="h-8 px-3 border border-slate-300 rounded text-xs w-full sm:w-56 focus:border-slate-800 text-slate-800">
+                                <input type="text" id="searchTable" placeholder="Cari catatan..." class="h-8 px-3 border border-slate-300 rounded text-xs w-full sm:w-44 focus:border-slate-800 text-slate-800">
                             </div>
                         </div>
                     </div>
@@ -839,13 +848,29 @@
                     tr.innerHTML = `
                         <td class="py-3 px-3.5 text-center font-medium text-slate-500 tabular-nums font-mono-code">${g.no}</td>
                         <td class="py-3 px-4">
-                            <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1">[${g.category}]</span>
-                            ${countBadge}
-                            <div class="text-slate-800 leading-relaxed mt-1">${escapeHtml(g.comment)}</div>
-                            ${detailsHtml}
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1">
+                                    <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1">[${g.category}]</span>
+                                    ${countBadge}
+                                    <div class="text-slate-800 leading-relaxed mt-1">${escapeHtml(g.comment)}</div>
+                                    ${detailsHtml}
+                                </div>
+                                <button type="button" onclick="copyCellText(this)" data-copy="${escapeHtml(`[${g.category}] ${g.comment}`)}" class="shrink-0 p-1.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all flex items-center gap-1" title="Salin komentar ini saja (teks bersih)">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    <span class="text-[10px] hidden sm:inline text-slate-500">Salin</span>
+                                </button>
+                            </div>
                         </td>
-                        <td class="py-3 px-4 font-mono-code text-[11px] text-slate-600 bg-slate-50/50">${escapeHtml(g.location)}</td>
-                        <td class="py-3 px-4 text-slate-400 italic text-[11px] bg-slate-50/20">
+                        <td class="py-3 px-4">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="font-mono-code text-[11px] text-slate-700 leading-relaxed flex-1">${escapeHtml(g.location)}</span>
+                                <button type="button" onclick="copyCellText(this)" data-copy="${escapeHtml(g.location)}" class="shrink-0 p-1.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all flex items-center gap-1" title="Salin lokasi ini saja (teks bersih)">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    <span class="text-[10px] hidden sm:inline text-slate-500">Salin</span>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-400 italic text-[11px]">
                             (Disediakan di formulir Word untuk respon author)
                         </td>
                     `;
@@ -865,10 +890,26 @@
                     tr.innerHTML = `
                         <td class="py-3 px-3.5 text-center font-medium text-slate-500 tabular-nums font-mono-code">${v.no}</td>
                         <td class="py-3 px-4">
-                            <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1">[${v.category}]</span>
-                            <div class="text-slate-800 leading-relaxed mt-1">${escapeHtml(v.comment)}</div>
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1">
+                                    <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1">[${v.category}]</span>
+                                    <div class="text-slate-800 leading-relaxed mt-1">${escapeHtml(v.comment)}</div>
+                                </div>
+                                <button type="button" onclick="copyCellText(this)" data-copy="${escapeHtml(`[${v.category}] ${v.comment}`)}" class="shrink-0 p-1.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all flex items-center gap-1" title="Salin komentar ini saja (teks bersih)">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    <span class="text-[10px] hidden sm:inline text-slate-500">Salin</span>
+                                </button>
+                            </div>
                         </td>
-                        <td class="py-3 px-4 font-mono-code text-[11px] text-slate-600 bg-slate-50/50">${escapeHtml(v.location)}</td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="font-mono-code text-[11px] text-slate-700 leading-relaxed flex-1">${escapeHtml(v.location)}</span>
+                                <button type="button" onclick="copyCellText(this)" data-copy="${escapeHtml(v.location)}" class="shrink-0 p-1.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all flex items-center gap-1" title="Salin lokasi ini saja (teks bersih)">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    <span class="text-[10px] hidden sm:inline text-slate-500">Salin</span>
+                                </button>
+                            </div>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -883,6 +924,110 @@
                 const text = row.innerText.toLowerCase();
                 row.style.display = text.includes(query) ? '' : 'none';
             });
+        });
+
+        // Copy Cell Plain Text Helper
+        window.copyCellText = function(btn) {
+            const text = btn.getAttribute('data-copy');
+            if (!text) return;
+            copyPlainText(text, btn);
+        };
+
+        function copyPlainText(text, buttonElement) {
+            if (!navigator.clipboard) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showCopyFeedback(buttonElement);
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyFeedback(buttonElement);
+            }).catch(err => {
+                console.error('Clipboard copy error:', err);
+            });
+        }
+
+        function showCopyFeedback(btn) {
+            if (!btn) return;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = `
+                <svg class="w-3.5 h-3.5 text-emerald-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <span class="text-[10px] text-emerald-700 font-semibold ml-0.5">Tersalin!</span>
+            `;
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+            }, 1800);
+        }
+
+        // One-Click Copy Whole Table for Google Docs / Word
+        document.getElementById('btnCopyTableForDocs').addEventListener('click', () => {
+            if (!lastResultData) return;
+            const btn = document.getElementById('btnCopyTableForDocs');
+            const btnLabel = document.getElementById('btnCopyTableLabel');
+            const isGrouped = currentTableMode === 'grouped' && lastResultData.grouped_violations;
+            const items = isGrouped ? lastResultData.grouped_violations : lastResultData.violations;
+
+            if (!items || items.length === 0) return;
+
+            // 1. Plain text TSV format (Google Docs paste directly into table cells)
+            let tsv = "No\tFormat Comments\tLocation in Manuscript\tAuthors' Response\n";
+            let rowsHtml = "";
+
+            items.forEach(it => {
+                const no = it.no;
+                const category = it.category;
+                const comment = it.comment;
+                const location = it.location;
+
+                const commentClean = `[${category}] ${comment}`;
+                tsv += `${no}\t${commentClean.replace(/\t/g, ' ')}\t${location.replace(/\t/g, ' ')}\t\n`;
+
+                rowsHtml += `<tr>
+                    <td style="text-align: center; padding: 6px 8px; vertical-align: top;">${no}</td>
+                    <td style="padding: 6px 8px; vertical-align: top;"><b>[${escapeHtml(category)}]</b> ${escapeHtml(comment)}</td>
+                    <td style="padding: 6px 8px; vertical-align: top;">${escapeHtml(location)}</td>
+                    <td style="padding: 6px 8px; vertical-align: top;"></td>
+                </tr>`;
+            });
+
+            // 2. Clean HTML table with zero background styling
+            const cleanHtml = `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 10pt; width: 100%;">
+                <thead>
+                    <tr style="background-color: #f2f4f7;">
+                        <th style="padding: 6px 8px; text-align: center; width: 40px;">No</th>
+                        <th style="padding: 6px 8px; text-align: left;">Format Comments</th>
+                        <th style="padding: 6px 8px; text-align: left; width: 140px;">Location in Manuscript</th>
+                        <th style="padding: 6px 8px; text-align: left; width: 140px;">Authors' Response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>`;
+
+            const origLabel = btnLabel.innerText;
+
+            if (navigator.clipboard && window.ClipboardItem) {
+                const blobHtml = new Blob([cleanHtml], { type: 'text/html' });
+                const blobText = new Blob([tsv], { type: 'text/plain' });
+                const data = [new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })];
+                navigator.clipboard.write(data).then(() => {
+                    btnLabel.innerText = "✓ Tabel Tersalin!";
+                    setTimeout(() => { btnLabel.innerText = origLabel; }, 2000);
+                }).catch(() => {
+                    copyPlainText(tsv, null);
+                    btnLabel.innerText = "✓ Teks Tersalin!";
+                    setTimeout(() => { btnLabel.innerText = origLabel; }, 2000);
+                });
+            } else {
+                copyPlainText(tsv, null);
+                btnLabel.innerText = "✓ Teks Tersalin!";
+                setTimeout(() => { btnLabel.innerText = origLabel; }, 2000);
+            }
         });
 
         // Download Base64 Helper
