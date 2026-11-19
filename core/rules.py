@@ -258,6 +258,9 @@ class IEEEComplianceChecker:
         
         # Rule 7: Final Page Column Balance Check
         self._check_last_page_column_balance(doc)
+        
+        # Rule 8: Comprehensive IEEE Font Size Compliance Check
+        self._check_font_size_compliance(doc, ref_info)
             
         return self.violations, self.metadata
 
@@ -1184,3 +1187,189 @@ class IEEEComplianceChecker:
                 severity="Warning",
                 snippet="Unbalanced columns"
             ))
+
+    def _check_font_size_compliance(self, doc: pymupdf.Document, ref_info: Optional[dict]):
+        """Verifies that all manuscript sections adhere to official IEEE font size specifications:
+        - Paper Title: 24 pt (regular, centered)
+        - Body Text: 10 pt (regular, justified, 2 columns)
+        - Abstract & Keywords: 9 pt (regular/bold)
+        - References / Bibliography: 8 pt (regular, justified)
+        - Figure Captions & Table Headings: 8 pt (regular)
+        """
+        if len(doc) == 0:
+            return
+
+        from collections import Counter
+        
+        # 1. Paper Title Font Size (Page 1 top area)
+        p1 = doc[0]
+        p1_dict = p1.get_text("dict")
+        p_width = p1.rect.width
+        p_height = p1.rect.height
+        title_spans = []
+        for b in p1_dict.get("blocks", []):
+            if b.get("bbox", [0, 999])[1] > 220:
+                continue
+            for l in b.get("lines", []):
+                for s in l.get("spans", []):
+                    t = s.get("text", "").strip()
+                    if len(t) > 6 and not re.search(r'\b(IEEE|conference|proceedings|vol|issue|copyright)\b', t, re.IGNORECASE):
+                        title_spans.append((s.get("size", 0), t, pymupdf.Rect(s.get("bbox"))))
+                        
+        if title_spans:
+            max_title_sz, title_txt, title_rect = max(title_spans, key=lambda x: x[0])
+            if max_title_sz < 18.0 or max_title_sz > 28.0:
+                loc = get_location_description(1, title_rect, p_width, p_height)
+                self.violations.append(Violation(
+                    no=len(self.violations) + 1,
+                    category="Font Size",
+                    comment=f"Format paper title in 24 pt regular font (currently {max_title_sz:.1f} pt). IEEE conference format specifies 24 pt for the manuscript title centered on the first page.",
+                    location=loc,
+                    page_num=1,
+                    rect=title_rect,
+                    severity="Warning",
+                    snippet=f"Title: {max_title_sz:.1f} pt"
+                ))
+
+        # 2. Abstract & Keywords Font Size (Page 1)
+        abs_y0, abs_y1 = None, None
+        for b in p1_dict.get("blocks", []):
+            for l in b.get("lines", []):
+                for s in l.get("spans", []):
+                    st = s.get("text", "")
+                    if "abstract" in st.lower() and abs_y0 is None:
+                        abs_y0 = s["bbox"][1]
+                    if (re.search(r'\b(keywords|index terms)\b', st, re.IGNORECASE) or re.match(r'^[IVXLCDM]+\.\s+', st)) and abs_y0 is not None and abs_y1 is None:
+                        if s["bbox"][1] > abs_y0 + 10:
+                            abs_y1 = s["bbox"][1]
+                            
+        if abs_y0 is not None:
+            if abs_y1 is None: abs_y1 = abs_y0 + 180
+            abs_spans = []
+            for b in p1_dict.get("blocks", []):
+                for l in b.get("lines", []):
+                    for s in l.get("spans", []):
+                        if abs_y0 + 5 <= s["bbox"][1] <= abs_y1:
+                            txt = s.get("text", "").strip()
+                            if len(txt) > 4 and "abstract" not in txt.lower():
+                                abs_spans.append((s.get("size", 9.0), pymupdf.Rect(s.get("bbox"))))
+            if abs_spans:
+                med_abs = sorted([sz for sz, _ in abs_spans])[len(abs_spans) // 2]
+                if med_abs >= 10.5:
+                    if not any(v.category == "Font Size" and "Abstract" in v.comment for v in self.violations):
+                        self.violations.append(Violation(
+                            no=len(self.violations) + 1,
+                            category="Font Size",
+                            comment=f"Format Abstract and Keywords in 9 pt font (currently {med_abs:.1f} pt). Standard IEEE conference body text is 10 pt and Abstract/Keywords is 9 pt, not 12 pt.",
+                            location="Page 1, Abstract Section",
+                            page_num=1,
+                            rect=abs_spans[0][1],
+                            severity="Warning",
+                            snippet=f"Abstract: {med_abs:.1f} pt"
+                        ))
+
+        # 3. References List Font Size (IEEE Rule: 8 pt)
+        ref_start_page = (ref_info["page"] - 1) if ref_info else None
+        ref_y0 = ref_info.get("y0", 0) if ref_info else 0
+        if ref_start_page is not None:
+            ref_spans = []
+            for p_idx in range(ref_start_page, len(doc)):
+                p = doc[p_idx]
+                p_dict = p.get_text("dict")
+                for b in p_dict.get("blocks", []):
+                    for l in b.get("lines", []):
+                        for s in l.get("spans", []):
+                            if p_idx == ref_start_page and s["bbox"][1] <= ref_y0 + 15:
+                                continue
+                            txt = s.get("text", "").strip()
+                            if len(txt) > 4:
+                                ref_spans.append((s.get("size", 8.0), pymupdf.Rect(s.get("bbox")), p_idx + 1))
+            if ref_spans:
+                med_ref = sorted([sz for sz, _, _ in ref_spans])[len(ref_spans) // 2]
+                if med_ref >= 9.5:
+                    first_rect = ref_spans[0][1]
+                    first_page = ref_spans[0][2]
+                    self.violations.append(Violation(
+                        no=len(self.violations) + 1,
+                        category="Font Size",
+                        comment=f"Format references in 8 pt regular font (currently {med_ref:.1f} pt). In IEEE conference format, the entire bibliography list must be set to 8 pt, not 10 pt or 12 pt.",
+                        location=f"Page {first_page}, References Section",
+                        page_num=first_page,
+                        rect=first_rect,
+                        severity="Warning",
+                        snippet=f"References: {med_ref:.1f} pt"
+                    ))
+
+        # 4. Captions Font Size (Figure and Table: IEEE Rule 8 pt)
+        for p_idx, page in enumerate(doc):
+            p_dict = page.get_text("dict")
+            for b in p_dict.get("blocks", []):
+                for l in b.get("lines", []):
+                    line_text = "".join(s.get("text", "") for s in l.get("spans", [])).strip()
+                    m_fig = re.match(r'^(Fig\.\s*\d+\.|\bFigure\s+\d+\.)\s+(.+)', line_text, re.IGNORECASE)
+                    if m_fig:
+                        first_span = l["spans"][0]
+                        sz = first_span.get("size", 8.0)
+                        rest = m_fig.group(2).lower()
+                        is_callout = any(rest.startswith(w) for w in ["shows", "illustrates", "presents", "depicts", "demonstrates", "is", "was", "are", "were"])
+                        if not is_callout and sz >= 9.5:
+                            r = pymupdf.Rect(first_span.get("bbox"))
+                            loc = get_location_description(p_idx + 1, r, page.rect.width, page.rect.height)
+                            self.violations.append(Violation(
+                                no=len(self.violations) + 1,
+                                category="Font Size",
+                                comment=f"Format figure captions in 8 pt regular font (currently {sz:.1f} pt). IEEE template mandates 8 pt font for figure captions (found in '{line_text[:35]}'), not 10 pt or 12 pt.",
+                                location=loc,
+                                page_num=p_idx + 1,
+                                rect=r,
+                                severity="Warning",
+                                snippet=f"Figure Caption: {sz:.1f} pt"
+                            ))
+                            break
+
+                    m_tbl = re.match(r'^(TABLE\s+[IVXLCDM]+\.?|\bTable\s+[IVXLCDM]+\.?|\bTable\s+\d+\.?)\s*(.+)?', line_text, re.IGNORECASE)
+                    if m_tbl:
+                        first_span = l["spans"][0]
+                        sz = first_span.get("size", 8.0)
+                        rest = (m_tbl.group(2) or "").lower().strip()
+                        is_callout = any(rest.startswith(w) for w in ["shows", "illustrates", "presents", "summarizes", "depicts", "demonstrates", "is", "was", "are", "were"])
+                        if not is_callout and sz >= 9.5 and not line_text.lower().startswith("table type styles"):
+                            r = pymupdf.Rect(first_span.get("bbox"))
+                            loc = get_location_description(p_idx + 1, r, page.rect.width, page.rect.height)
+                            self.violations.append(Violation(
+                                no=len(self.violations) + 1,
+                                category="Font Size",
+                                comment=f"Format table titles and contents in 8 pt font (currently {sz:.1f} pt). IEEE template mandates 8 pt for table titles and cell contents (found in '{line_text[:35]}'), not 10 pt or 12 pt.",
+                                location=loc,
+                                page_num=p_idx + 1,
+                                rect=r,
+                                severity="Warning",
+                                snippet=f"Table Caption: {sz:.1f} pt"
+                            ))
+                            break
+
+        # 5. Main Body Text Dominant Font Size Check (IEEE Rule: 10 pt)
+        body_sizes = []
+        for p_idx, page in enumerate(doc):
+            if ref_start_page is not None and p_idx > ref_start_page:
+                continue
+            p_dict = page.get_text("dict")
+            for b in p_dict.get("blocks", []):
+                for l in b.get("lines", []):
+                    for s in l.get("spans", []):
+                        txt = s.get("text", "").strip()
+                        if len(txt) > 20 and not txt.startswith("Fig.") and not txt.startswith("TABLE"):
+                            body_sizes.append(round(s.get("size", 10.0), 1))
+        if body_sizes:
+            dominant_sz, count = Counter(body_sizes).most_common(1)[0]
+            if dominant_sz >= 11.5:
+                self.violations.append(Violation(
+                    no=len(self.violations) + 1,
+                    category="Font Size",
+                    comment=f"Format main body text in 10 pt regular font (currently dominant size is {dominant_sz:.1f} pt). IEEE conference proceedings require 10 pt regular font in two-column format; do not use standard Word 12 pt.",
+                    location="Document-wide Body Text",
+                    page_num=1,
+                    rect=pymupdf.Rect(40, 200, p_width - 40, p_height - 100),
+                    severity="Fatal",
+                    snippet=f"Body: {dominant_sz:.1f} pt"
+                ))

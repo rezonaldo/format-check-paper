@@ -139,7 +139,10 @@ def group_violations(violations: List[Violation]) -> List[Dict[str, Any]]:
         elif category == "Online Reference Format":
             comment = f"Format online references using standard IEEE prefix '[Online]. Available: URL' and include access dates ({snip_text})."
         elif category == "Font Size":
-            comment = f"Change Abstract and Keywords font size to 9 pt ({snip_text}); standard body text is 10 pt and Abstract/Keywords is 9 pt."
+            if len(items) == 1:
+                comment = first_comment
+            else:
+                comment = f"Adjust section font sizes to meet official IEEE specifications ({snip_text}): Paper Title 24 pt, Body Text 10 pt, Abstract/Keywords 9 pt, References and Captions 8 pt."
         else:
             if items[0].snippet and items[0].snippet in first_comment and snip_text:
                 comment = first_comment.replace(f'"{items[0].snippet}"', snip_text)
