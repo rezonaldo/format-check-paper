@@ -123,9 +123,23 @@ def group_violations(violations: List[Violation]) -> List[Dict[str, Any]]:
         elif category == "Figure Caption":
             comment = f"Format figure caption labels as 'Fig. X. Caption text' with a period and space ({snip_text}); remove stray colons."
         elif category == "Table Citation":
-            comment = f"Cite tables using uppercase Roman numerals ({snip_text}, e.g. 'Table I', 'Table II'); do not use Arabic numbers."
-        elif category == "Revision Markup (Red Font)":
-            comment = f"Convert all red font revision text ({snip_text}) to standard 100% black font."
+            comment = f"Cite tables using uppercase Roman numerals and capitalize table callouts ({snip_text}, e.g. 'Table I', 'Table II'); do not use Arabic numbers or lowercase 'table'."
+        elif category == "Table Title Format":
+            comment = f"Format table titles in ALL CAPS centered above table ({snip_text}); do not use lowercase or title case."
+        elif category == "Caption Label Typo":
+            comment = f"Standardize caption labels: format as 'Fig. X. Caption text' or 'TABLE X. TITLE' ({snip_text}); remove stray colons or punctuation typos."
+        elif category == "Raw LaTeX Syntax":
+            comment = f"Render raw LaTeX syntax properly ({snip_text}); compile all equations and citations into standard rendered text."
+        elif category == "Review Annotation / Highlight":
+            comment = f"Remove visible highlight annotations and review markup ({snip_text}) from camera-ready manuscript."
+        elif category == "Non-Black Font Color" or category == "Revision Markup (Red Font)":
+            comment = f"Convert all non-black and colored font text ({snip_text}) to standard 100% black font."
+        elif category == "Drop Cap (Novel Style)":
+            comment = f"Remove drop cap initial letter ({snip_text}) at the beginning of Introduction; write in standard 10 pt regular text."
+        elif category == "Online Reference Format":
+            comment = f"Format online references using standard IEEE prefix '[Online]. Available: URL' and include access dates ({snip_text})."
+        elif category == "Font Size":
+            comment = f"Change Abstract and Keywords font size to 9 pt ({snip_text}); standard body text is 10 pt and Abstract/Keywords is 9 pt."
         else:
             if items[0].snippet and items[0].snippet in first_comment and snip_text:
                 comment = first_comment.replace(f'"{items[0].snippet}"', snip_text)

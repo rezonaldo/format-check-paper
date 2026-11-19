@@ -504,6 +504,100 @@ class IEEEComplianceChecker:
                     ))
                     break
 
+        # 7. Abstract Font Style (Italics) and Font Size Check
+        # IEEE template: Abstract text must be regular (upright) font style, 9 pt.
+        p1_dict = page.get_text("dict")
+        abs_y0, abs_y1 = None, None
+        for b in p1_dict.get("blocks", []):
+            for l in b.get("lines", []):
+                for s in l.get("spans", []):
+                    st = s.get("text", "")
+                    if "abstract" in st.lower() and abs_y0 is None:
+                        abs_y0 = s["bbox"][1]
+                    if (re.search(r'\b(keywords|index terms)\b', st, re.IGNORECASE) or re.match(r'^[IVXLCDM]+\.\s+', st)) and abs_y0 is not None and abs_y1 is None:
+                        if s["bbox"][1] > abs_y0 + 10:
+                            abs_y1 = s["bbox"][1]
+
+        if abs_y0 is not None:
+            if abs_y1 is None:
+                abs_y1 = abs_y0 + 180
+            italic_chars = 0
+            total_chars = 0
+            large_spans = []
+            for b in p1_dict.get("blocks", []):
+                for l in b.get("lines", []):
+                    for s in l.get("spans", []):
+                        if abs_y0 + 5 <= s["bbox"][1] <= abs_y1:
+                            txt = s.get("text", "").strip()
+                            if not txt or "abstract" in txt.lower():
+                                continue
+                            total_chars += len(txt)
+                            is_italic = bool(s.get("flags", 0) & 2) or ("italic" in s.get("font", "").lower())
+                            if is_italic:
+                                italic_chars += len(txt)
+                            if s.get("size", 10.0) >= 11.5:
+                                large_spans.append((s["size"], s["bbox"]))
+
+            if total_chars > 30 and (italic_chars / total_chars) > 0.60:
+                self.violations.append(Violation(
+                    no=len(self.violations) + 1,
+                    category="Abstract Formatting",
+                    comment="Change Abstract body text font from italic to regular (upright) font style. In the IEEE conference template, only the heading 'Abstract—' is italicized; the abstract text itself must be regular font.",
+                    location="Page 1, Abstract Section",
+                    page_num=1,
+                    rect=pymupdf.Rect(40, abs_y0, p_width - 40, abs_y1),
+                    severity="Warning",
+                    snippet="Italicized abstract text"
+                ))
+
+            if large_spans:
+                max_sz = max([sz for sz, _ in large_spans])
+                self.violations.append(Violation(
+                    no=len(self.violations) + 1,
+                    category="Font Size",
+                    comment=f"Change Abstract/Keywords font size to 9 pt (currently {max_sz:.1f} pt). Standard IEEE conference body text is 10 pt and Abstract/Keywords is 9 pt, not 12 pt.",
+                    location="Page 1, Abstract Section",
+                    page_num=1,
+                    rect=pymupdf.Rect(large_spans[0][1]),
+                    severity="Warning",
+                    snippet=f"{max_sz:.1f} pt font"
+                ))
+
+        # 8. Drop Cap (Large Initial Letter) Check in Introduction
+        # IEEE Conference style does NOT use drop caps (unlike IEEE Journals/Transactions).
+        for b in p1_dict.get("blocks", []):
+            for l in b.get("lines", []):
+                for s in l.get("spans", []):
+                    st = s.get("text", "").strip()
+                    if len(st) == 1 and st.isupper() and s.get("size", 10) >= 16.0 and s["bbox"][1] > 200:
+                        bbox = pymupdf.Rect(s["bbox"])
+                        loc = get_location_description(1, bbox, p_width, p_height)
+                        self.violations.append(Violation(
+                            no=len(self.violations) + 1,
+                            category="Drop Cap (Novel Style)",
+                            comment=f"Remove drop cap initial letter '{st}'. Drop caps (large initial letters) are used in IEEE Journals/Transactions, but are prohibited in IEEE conference papers; format the opening paragraph in standard 10 pt regular text.",
+                            location=loc,
+                            page_num=1,
+                            rect=bbox,
+                            severity="Warning",
+                            snippet=st
+                        ))
+                        break
+
+        # 9. Institutional Affiliation Standardization Check (e.g. "IPB" vs "IPB University")
+        top_text = page.get_text("text")[:1500]
+        if re.search(r'\bIPB\b(?!\s*University)', top_text):
+            self.violations.append(Violation(
+                no=len(self.violations) + 1,
+                category="Author Affiliation",
+                comment="Standardize university affiliation: write 'IPB University' (or 'Institut Pertanian Bogor') consistently across all author blocks instead of standalone abbreviation 'IPB'.",
+                location="Page 1, Author Affiliation Block",
+                page_num=1,
+                rect=pymupdf.Rect(40, 100, p_width - 40, 220),
+                severity="Warning",
+                snippet="IPB"
+            ))
+
     def _is_in_references(self, page_num: int, rect: Optional[pymupdf.Rect], page_width: float, ref_info: Optional[dict]) -> bool:
         """Determines if a given rectangle on a page is inside the bibliography/references section."""
         if not ref_info or not rect:
@@ -597,6 +691,51 @@ class IEEEComplianceChecker:
                     snippet=target_str
                 ))
                 break
+
+        # 3b. Lowercase In-Text Table Callout ("table 1", "table 6")
+        table_lower_matches = list(re.finditer(r'(?<![A-Za-z0-9_-])\b(table\s+\d+)\b', page_text))
+        for match in table_lower_matches:
+            target_str = match.group(1)
+            rects = page.search_for(target_str)
+            for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
+                loc = get_location_description(page_num, r, p_width, p_height)
+                self.violations.append(Violation(
+                    no=len(self.violations) + 1,
+                    category="Table Citation",
+                    comment=f"Capitalize in-text table callout: write 'Table {target_str.split()[1]}' instead of lowercase \"{target_str}\".",
+                    location=loc,
+                    page_num=page_num,
+                    rect=r,
+                    severity="Warning",
+                    snippet=target_str
+                ))
+                break
+
+        # 3c. Table Title ALL CAPS Check ("TABLE I. Network Model" -> should be "TABLE I. NETWORK MODEL")
+        table_cap_matches = list(re.finditer(r'^\s*(TABLE\s+[IVXLCDM]+\.?\s*)([^\n\r]+)', page_text, re.MULTILINE))
+        for match in table_cap_matches:
+            tbl_prefix = match.group(1)
+            tbl_title = match.group(2).strip()
+            if any(c.islower() for c in tbl_title) and len(tbl_title) >= 4 and not tbl_title.lower().startswith("type styles"):
+                full_tbl_line = match.group(0).strip()
+                rects = page.search_for(full_tbl_line[:30])
+                for r in rects:
+                    if self._is_in_references(page_num, r, p_width, ref_info):
+                        continue
+                    loc = get_location_description(page_num, r, p_width, p_height)
+                    self.violations.append(Violation(
+                        no=len(self.violations) + 1,
+                        category="Table Title Format",
+                        comment=f"Format table title in ALL CAPS: change '{full_tbl_line}' to ALL UPPERCASE letters above the table (e.g. '{tbl_prefix}{tbl_title.upper()}').",
+                        location=loc,
+                        page_num=page_num,
+                        rect=r,
+                        severity="Warning",
+                        snippet=full_tbl_line
+                    ))
+                    break
 
         # 4. Heading 5: Numbered REFERENCES or ACKNOWLEDGMENT
         # IEEE rule: Component heads (Acknowledgment, References) are unnumbered.
@@ -743,27 +882,72 @@ class IEEEComplianceChecker:
                 ))
                 break
 
-        # 11. Figure Caption Punctuation (stray colon or missing space in caption label)
-        for match in re.finditer(r'\b(Fig\.\s*\d+\.\s*:\s*|Fig\.\s*\d+\s*:\s*|Fig\.\d+\.)', page_text):
+        # 11. Caption Label Typo & Inconsistency ("TABLE. I.", "TABLE I:", "Fig. 1:", "Fig 1.", "ig. 1.")
+        caption_typo_regex = r'\b(TABLE\.\s*[IVXLCDM]+|TABLE\s+[IVXLCDM]+\s*:|TABLE\s+\d+\s*:|Fig\.\s*\d+\s*:|Fig\s+\d+\.|\big\.\s*\d+|figure\.\s*\d+)\b'
+        for match in re.finditer(caption_typo_regex, page_text, re.IGNORECASE):
             target_str = match.group(1)
             rects = page.search_for(target_str)
             for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
                 loc = get_location_description(page_num, r, p_width, p_height)
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
-                    category="Figure Caption",
-                    comment=f"Format figure caption labels as 'Fig. X. Caption text' with a period and space (remove stray colon from \"{target_str.strip()}\").",
+                    category="Caption Label Typo",
+                    comment=f"Standardize caption label: format as 'Fig. X. Caption text' or 'TABLE X. TITLE' (remove punctuation/spacing typo from \"{target_str}\").",
                     location=loc,
                     page_num=page_num,
                     rect=r,
                     severity="Warning",
-                    snippet=target_str.strip()
+                    snippet=target_str
                 ))
                 break
 
-        # 12. Red Font / Revision Markup Check (Camera-ready manuscripts must be black text)
+        # 11b. Raw Unrendered LaTeX Math / Syntax in Body Text ("\( ... \)", "\begin{equation}", "\frac{", "\cite{")
+        raw_latex_matches = list(re.finditer(r'(\\\([^\)]+\\\)|\\\[[^\]]+\\\]|\\begin\{(?:equation|align|gather)\}|\\frac\{[^\}]+\}\{[^\}]+\}|\\cite\{[^\}]+\}|\\ref\{[^\}]+\})', page_text))
+        for match in raw_latex_matches:
+            target_str = match.group(1)
+            rects = page.search_for(target_str[:25])
+            for r in rects:
+                if self._is_in_references(page_num, r, p_width, ref_info):
+                    continue
+                loc = get_location_description(page_num, r, p_width, p_height)
+                self.violations.append(Violation(
+                    no=len(self.violations) + 1,
+                    category="Raw LaTeX Syntax",
+                    comment=f"Render raw LaTeX syntax properly: found unrendered code '{target_str[:40]}' in body text; compile equations and citations into standard rendered text.",
+                    location=loc,
+                    page_num=page_num,
+                    rect=r,
+                    severity="Fatal",
+                    snippet=target_str[:40]
+                ))
+                break
+
+        # 11c. Visible Highlights & Review Markup Annotations
+        try:
+            for annot in page.annots() or []:
+                subtype = annot.type[1] if annot.type and len(annot.type) > 1 else str(annot.type)
+                if annot.type[0] in [8, 9, 10, 11] or "highlight" in subtype.lower() or "strikeout" in subtype.lower():
+                    r = annot.rect
+                    loc = get_location_description(page_num, r, p_width, p_height)
+                    self.violations.append(Violation(
+                        no=len(self.violations) + 1,
+                        category="Review Annotation / Highlight",
+                        comment=f"Remove visible highlight annotation / review markup ('{subtype}') from the manuscript before final camera-ready submission.",
+                        location=loc,
+                        page_num=page_num,
+                        rect=r,
+                        severity="Fatal",
+                        snippet=subtype
+                    ))
+                    break
+        except Exception:
+            pass
+
+        # 12. Non-Black Font Colors / Revision Markup Check (Camera-ready manuscripts must be black text)
         page_dict = page.get_text("dict")
-        red_found = False
+        non_black_found = False
         for block in page_dict.get("blocks", []):
             for line in block.get("lines", []):
                 for span in line.get("spans", []):
@@ -772,23 +956,28 @@ class IEEEComplianceChecker:
                     g_val = (color >> 8) & 0xFF
                     b_val = color & 0xFF
                     s_text = span.get("text", "").strip()
-                    if len(s_text) > 8 and r_val > 180 and g_val < 60 and b_val < 60:
-                        bbox = pymupdf.Rect(span.get("bbox"))
-                        loc = get_location_description(page_num, bbox, p_width, p_height)
-                        self.violations.append(Violation(
-                            no=len(self.violations) + 1,
-                            category="Revision Markup (Red Font)",
-                            comment=f"Convert all red font revision text (\"{s_text[:50]}\") to standard 100% black font.",
-                            location=loc,
-                            page_num=page_num,
-                            rect=bbox,
-                            severity="Fatal",
-                            snippet=s_text[:50]
-                        ))
-                        red_found = True
-                        break
-                if red_found: break
-            if red_found: break
+                    if len(s_text) > 8 and not s_text.startswith("http") and not s_text.startswith("doi:"):
+                        is_red = (r_val > 180 and g_val < 60 and b_val < 60)
+                        is_green = (g_val > 140 and r_val < 80 and b_val < 80)
+                        is_blue = (b_val > 180 and r_val < 60 and g_val < 100 and not s_text.endswith((".com", ".org", ".edu", ".id", "@")))
+                        is_colored = is_red or is_green or is_blue or (max(r_val, g_val, b_val) - min(r_val, g_val, b_val) > 100 and max(r_val, g_val, b_val) > 160)
+                        if is_colored:
+                            bbox = pymupdf.Rect(span.get("bbox"))
+                            loc = get_location_description(page_num, bbox, p_width, p_height)
+                            self.violations.append(Violation(
+                                no=len(self.violations) + 1,
+                                category="Non-Black Font Color",
+                                comment=f"Convert non-black font text (\"{s_text[:50]}\") to standard 100% black font. All body text in camera-ready manuscripts must be in standard black font.",
+                                location=loc,
+                                page_num=page_num,
+                                rect=bbox,
+                                severity="Fatal",
+                                snippet=s_text[:50]
+                            ))
+                            non_black_found = True
+                            break
+                if non_black_found: break
+            if non_black_found: break
 
         # 13. Prohibited Section Headings in Conference Papers (Author Bio, Supplementary Materials)
         for match in re.finditer(r'\b(Author\s+Biograph(?:y|ies)|Author\s+Profile|Supplementary\s+Materials?|Data\s+and\s+Code\s+Availability)\b', page_text, re.IGNORECASE):
@@ -936,6 +1125,30 @@ class IEEEComplianceChecker:
                         severity="Fatal",
                         snippet=f"[{n1}] and [{n2}]"
                     ))
+
+        # 6. Online Reference Format Check ("[Online]. Available: URL")
+        for m in re.finditer(r'(https?://[^\s,]+)', ref_text):
+            url_str = m.group(1)
+            if "doi.org" in url_str.lower():
+                continue
+            url_start = m.start()
+            preceding_snip = ref_text[max(0, url_start - 35):url_start]
+            if "[online]" not in preceding_snip.lower() and "available:" not in preceding_snip.lower():
+                for p_idx in range(start_page, len(doc)):
+                    rects = doc[p_idx].search_for(url_str[:25])
+                    if rects:
+                        loc = get_location_description(p_idx + 1, rects[0], doc[p_idx].rect.width, doc[p_idx].rect.height)
+                        self.violations.append(Violation(
+                            no=len(self.violations) + 1,
+                            category="Online Reference Format",
+                            comment=f"Format online reference using IEEE standard '[Online]. Available: {url_str}' and include access date.",
+                            location=loc,
+                            page_num=p_idx + 1,
+                            rect=rects[0],
+                            severity="Warning",
+                            snippet=url_str
+                        ))
+                        break
 
     def _check_last_page_column_balance(self, doc: pymupdf.Document):
         """Checks if the columns on the final page are approximately balanced."""
