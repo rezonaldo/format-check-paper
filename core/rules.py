@@ -156,16 +156,14 @@ class IEEEComplianceChecker:
         if self.target_size == "A4" and not is_a4:
             if is_letter:
                 msg = (
-                    f"Paper size detected as US Letter ({p_width:.1f} x {p_height:.1f} pt). "
-                    "IEEE ICoDMI (Region 10) proceedings require A4 size (210 x 297 mm / 595 x 842 pt) "
-                    "in accordance with the official conference template. Please change Page Setup from Letter to A4 "
-                    "so margins and column boundaries do not shift when compiled into the IEEE Xplore proceedings."
+                    f"Change Page Setup from US Letter ({p_width:.1f} x {p_height:.1f} pt) to A4 (210 x 297 mm / 595 x 842 pt). "
+                    "IEEE ICoDMI (Region 10) proceedings require A4 size in accordance with the official conference template "
+                    "so margins and column boundaries do not shift when compiled into IEEE Xplore."
                 )
             else:
                 msg = (
-                    f"Paper size detected as custom dimensions ({p_width:.1f} x {p_height:.1f} pt). "
-                    "The official IEEE ICoDMI conference template mandates standard A4 size (210 x 297 mm / 595 x 842 pt). "
-                    "Please adjust the document page setup to A4."
+                    f"Change Page Setup from custom dimensions ({p_width:.1f} x {p_height:.1f} pt) to standard A4 (210 x 297 mm / 595 x 842 pt) "
+                    "as mandated by the official IEEE ICoDMI conference template."
                 )
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
@@ -182,7 +180,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Page Count (Below Minimum)",
-                comment=f"The manuscript has {total_pages} page(s). IEEE ICoDMI formatting policy requires a minimum of {self.min_pages} pages for regular conference papers.",
+                comment=f"Expand manuscript to meet the minimum required length of {self.min_pages} pages (current length: {total_pages} pages).",
                 location=f"Overall Document ({total_pages} pages)",
                 page_num=total_pages,
                 rect=pymupdf.Rect(0, p_height - 50, p_width, p_height),
@@ -193,9 +191,8 @@ class IEEEComplianceChecker:
                 no=len(self.violations) + 1,
                 category="Page Count (Extra Pages)",
                 comment=(
-                    f"The manuscript has {total_pages} pages, which exceeds the standard regular paper length ({self.max_pages} pages). "
-                    f"This manuscript falls into the 'Extra Pages' category ({total_pages - self.max_pages} additional page(s), maximum {self.hard_max_pages} pages permitted). "
-                    "The paper can proceed for publication, but authors must settle the applicable extra page fee according to ICoDMI conference guidelines."
+                    f"Condense manuscript to standard length ({self.max_pages} pages) or settle the extra page fee for {total_pages - self.max_pages} additional page(s) "
+                    f"(current length: {total_pages} pages; maximum permitted: {self.hard_max_pages} pages)."
                 ),
                 location=f"Overall Document ({total_pages} pages)",
                 page_num=total_pages,
@@ -207,9 +204,8 @@ class IEEEComplianceChecker:
                 no=len(self.violations) + 1,
                 category="Page Count (Exceeds Maximum Limit)",
                 comment=(
-                    f"The manuscript contains {total_pages} pages, which exceeds the absolute maximum length permitted by IEEE ICoDMI "
-                    f"({self.hard_max_pages} pages including extra pages). "
-                    f"The manuscript CANNOT be published unless it is condensed to at most {self.hard_max_pages} pages."
+                    f"Condense manuscript to at most {self.hard_max_pages} pages immediately (current length: {total_pages} pages). "
+                    "The manuscript cannot be published if it exceeds this absolute limit."
                 ),
                 location=f"Overall Document ({total_pages} pages)",
                 page_num=total_pages,
@@ -276,7 +272,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="PDF Metadata",
-                comment=f"PDF document properties contain template placeholder title: \"{title}\". IEEE template requires PDF metadata to reflect the actual paper title. Please update the Title in File > Info > Properties (in MS Word) or \\title (in LaTeX).",
+                comment=f"Update PDF document properties (Title) with the actual manuscript title (currently set to placeholder \"{title}\"). Set this in File > Info > Properties in Word or \\title in LaTeX.",
                 location="PDF Document Properties (Title)",
                 page_num=1,
                 rect=pymupdf.Rect(0, 0, 120, 20),
@@ -289,7 +285,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="PDF Metadata",
-                comment=f"PDF document properties contain template placeholder author: \"{author}\". Please update the Author property in File > Info > Properties with actual author names.",
+                comment=f"Update PDF document properties (Author) with the actual author names (currently set to placeholder \"{author}\").",
                 location="PDF Document Properties (Author)",
                 page_num=1,
                 rect=pymupdf.Rect(0, 0, 120, 20),
@@ -308,7 +304,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Template Guideline Text",
-                        comment=f"Found leftover template placeholder text: \"{phrase}\". IEEE explicitly states: 'Please ensure that all template text is removed prior to submission. Failure to remove template text may result in your paper not being published.'",
+                        comment=f"Remove leftover template instruction text: \"{phrase}\". All IEEE template placeholders and instructional notes must be deleted before camera-ready submission.",
                         location=loc,
                         page_num=page_num,
                         rect=rect,
@@ -338,7 +334,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Pagination",
-                comment=f"Detected page numbering in header: \"{header_text}\". IEEE guideline explicitly states: 'Do not add any kind of pagination anywhere in the paper.'",
+                comment=f"Remove page numbering from header: \"{header_text}\". IEEE guideline explicitly states: 'Do not add any kind of pagination anywhere in the paper.'",
                 location=f"Page {page_num}, Header Area",
                 page_num=page_num,
                 rect=r,
@@ -353,7 +349,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Pagination",
-                comment=f"Detected page numbering in footer: \"{footer_text}\". IEEE guideline explicitly states: 'Do not add any kind of pagination anywhere in the paper.'",
+                comment=f"Remove page numbering from footer: \"{footer_text}\". IEEE guideline explicitly states: 'Do not add any kind of pagination anywhere in the paper.'",
                 location=f"Page {page_num}, Footer Area",
                 page_num=page_num,
                 rect=r,
@@ -382,7 +378,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Abstract",
-                comment="Abstract section heading not found on Page 1.",
+                comment="Add 'Abstract' section heading at the beginning of the manuscript on Page 1.",
                 location="Page 1, Top Section",
                 page_num=1,
                 rect=pymupdf.Rect(40, 150, p_width - 40, 250),
@@ -398,7 +394,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Abstract Formatting",
-                        comment="Abstract heading should be formatted as a run-in head in bold/italic followed by an em-dash: 'Abstract—' (not followed by colon or on a separate line).",
+                        comment="Format Abstract heading as a run-in head in bold/italic followed by an em-dash: 'Abstract—' (do not follow with colon or place on a separate line).",
                         location=get_location_description(1, abstract_rects[0], p_width, p_height),
                         page_num=1,
                         rect=abstract_rects[0],
@@ -412,7 +408,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Keywords",
-                comment="Keywords / Index Terms section not found on Page 1.",
+                comment="Add Keywords section on Page 1 immediately following the Abstract.",
                 location="Page 1, Following Abstract",
                 page_num=1,
                 rect=pymupdf.Rect(40, 250, p_width - 40, 320),
@@ -429,7 +425,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Paper Title (Subtitle)",
-                        comment=f"The manuscript title contains a subtitle after a colon: \"{sub_snip}\". IEEE guidelines state: 'Sub-titles are not captured in IEEE Xplore and should not be used.' Please revise the title into a single coherent title without a colon.",
+                        comment=f"Remove subtitle and colon from title: revise \"{sub_snip}\" into a single title line without a colon (subtitles are not captured in IEEE Xplore).",
                         location="Page 1, Title Section",
                         page_num=1,
                         rect=pymupdf.Rect(b[0], b[1], b[2], b[3]),
@@ -448,7 +444,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Author Affiliation",
-                        comment=f"Author name is preceded by template ordinal label \"{ord_str}\". These are leftover template placeholders from the IEEE template and must be removed.",
+                        comment=f"Delete template ordinal placeholder \"{ord_str}\" from author names.",
                         location=get_location_description(1, r, p_width, p_height),
                         page_num=1,
                         rect=r,
@@ -464,7 +460,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Keywords Heading",
-                comment="The keyword list is introduced with \"Index Terms\". The IEEE A4 conference template used by ICoDMI prescribes the heading \"Keywords—\" (bold/italic run-in format). Please change \"Index Terms\" to \"Keywords—\".",
+                comment="Change heading from 'Index Terms' to 'Keywords—' in bold/italic run-in format as prescribed by the IEEE conference template.",
                 location=get_location_description(1, r, p_width, p_height),
                 page_num=1,
                 rect=r,
@@ -483,7 +479,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Abstract Content",
-                        comment=f"The abstract contains the percent symbol \"{pct_str}\". IEEE template states: 'The abstract should not contain symbols, special characters, or mathematical expressions, because they may not display correctly in IEEE Xplore.' Please rephrase using plain text (e.g., \"{pct_str.replace('%', ' percent')}\").",
+                        comment=f"Replace percent symbol in abstract: write \"{pct_str.replace('%', ' percent')}\" instead of \"{pct_str}\" (symbols may not display correctly in IEEE Xplore).",
                         location=get_location_description(1, r, p_width, p_height),
                         page_num=1,
                         rect=r,
@@ -499,7 +495,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Abstract Content",
-                        comment=f"The abstract contains mathematical expression or metric formula \"{math_str}\". IEEE template states: 'The abstract must not contain mathematical equations or symbols.' Please express findings in descriptive plain text.",
+                        comment=f"Remove mathematical expression or formula \"{math_str}\" from abstract; express findings in descriptive plain text.",
                         location=get_location_description(1, r, p_width, p_height),
                         page_num=1,
                         rect=r,
@@ -549,7 +545,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Equation Citation",
-                    comment=f"Found \"{target_str}\" in middle of sentence. IEEE rule: 'Use \"(1)\", not \"Eq. (1)\" or \"equation (1)\", except at the beginning of a sentence: \"Equation (1) is...\"'",
+                    comment=f"Refer to equations simply as '(1)' in mid-sentence (found \"{target_str}\"); use 'Equation (1)' only at the beginning of a sentence.",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -572,7 +568,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Figure Citation",
-                    comment=f"Found \"{target_str}\". IEEE rule prescribes: 'Use the abbreviation \"Fig. 1\", even at the beginning of a sentence.' (Do not spell out 'Figure').",
+                    comment=f"Replace 'Figure' with standard abbreviation 'Fig.' (found \"{target_str}\"), even at the beginning of a sentence.",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -593,7 +589,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Table Style",
-                    comment=f"Found \"{target_str}\". IEEE template prescribes uppercase Roman numerals for table titles: 'TABLE I. TABLE TYPE STYLES' centered above the table.",
+                    comment=f"Change table numbering to uppercase Roman numerals in ALL CAPS: 'TABLE I. TABLE TYPE STYLES' centered above table (found \"{target_str}\"); do not use Arabic numerals.",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -613,7 +609,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Component Heading",
-                    comment=f"Found numbered component heading: \"{target_str}\". In IEEE style, Acknowledgments and References are Component Heads (Heading 5) and MUST NOT be numbered with Roman numerals or Arabic numbers.",
+                    comment=f"Remove numbering from component heading \"{target_str}\". In IEEE style, Acknowledgments and References are Component Heads (Heading 5) and must remain unnumbered.",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -633,7 +629,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Spelling / Language",
-                    comment=f"Spelling error: \"{target_str}\". IEEE template notes: 'The preferred spelling of the word \"acknowledgment\" in America is without an \"e\" after the \"g\".'",
+                    comment=f"Correct spelling of \"{target_str}\" to American English 'Acknowledgment' (without an 'e' after the 'g').",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -653,7 +649,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Latin Abbreviation",
-                    comment=f"Found \"{target_str}\". IEEE rule: 'There is no period after the \"et\" in the Latin abbreviation \"et al.\".' (Use 'et al.').",
+                    comment=f"Remove period after 'et' in Latin abbreviation: write 'et al.' instead of \"{target_str}\".",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -673,7 +669,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Number & Decimal Format",
-                    comment=f"Found decimal point without leading zero: \"{target_str}\". IEEE rule: 'Use a zero before decimal points: \"0.25\", not \".25\".'",
+                    comment=f"Insert a leading zero before decimal points: write '0.{target_str.lstrip('.')}' instead of \"{target_str}\".",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -693,7 +689,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Units Format",
-                    comment=f"Found deprecated unit: \"{target_str}\". IEEE rule: 'Use \"cm3\", not \"cc\".'",
+                    comment=f"Use standard metric unit 'cm3' instead of deprecated unit \"{target_str}\".",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -716,7 +712,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Citation Punctuation",
-                    comment=f"Found sentence punctuation placed before citation bracket: \"{target_str}\". IEEE rule: 'The sentence punctuation follows the bracket [2].' (e.g. use '...word [1].' instead of '...word.[1]').",
+                    comment=f"Move sentence punctuation to follow after citation brackets: write '...word [1].' instead of \"{target_str}\".",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -738,7 +734,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Reference Callout",
-                    comment=f"Found \"{target_str}\" in middle of sentence. IEEE rule: 'Refer simply to the reference number, as in [3], do not use \"Ref. [3]\" or \"reference [3]\" except at the beginning of a sentence.'",
+                    comment=f"Refer directly to citation numbers as '[3]' in mid-sentence: remove \"{target_str}\".",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -756,7 +752,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Figure Caption",
-                    comment=f"Irregular punctuation in figure caption label: \"{target_str.strip()}\". IEEE caption style requires: 'Fig. 1. Caption text' (with period and space, without colon).",
+                    comment=f"Format figure caption labels as 'Fig. X. Caption text' with a period and space (remove stray colon from \"{target_str.strip()}\").",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -782,7 +778,7 @@ class IEEEComplianceChecker:
                         self.violations.append(Violation(
                             no=len(self.violations) + 1,
                             category="Revision Markup (Red Font)",
-                            comment=f"Passage rendered in red font: \"{s_text[:50]}\". All text in camera-ready IEEE manuscripts must be in standard black font. Please remove all revision markers.",
+                            comment=f"Convert all red font revision text (\"{s_text[:50]}\") to standard 100% black font.",
                             location=loc,
                             page_num=page_num,
                             rect=bbox,
@@ -803,7 +799,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Prohibited Section",
-                    comment=f"Found \"{target_str}\". IEEE conference template does not permit author biographies or standalone supplementary sections (these are reserved for Transactions/Journals). Please integrate code/data links into the body text or footnotes.",
+                    comment=f"Remove prohibited section \"{target_str}\". Author biographies and standalone supplementary sections are not permitted in IEEE conference papers; integrate code/data links into body text or footnotes.",
                     location=loc,
                     page_num=page_num,
                     rect=r,
@@ -820,7 +816,7 @@ class IEEEComplianceChecker:
                 self.violations.append(Violation(
                     no=len(self.violations) + 1,
                     category="Component Heading",
-                    comment="The heading \"CONCLUSION\" is not numbered, whereas other content sections use Roman numerals. Please format as \"V. CONCLUSION\" (or the appropriate Roman numeral).",
+                    comment="Number the section heading: format unnumbered \"CONCLUSION\" as \"V. CONCLUSION\" (or the appropriate Roman numeral).",
                     location=loc,
                     page_num=page_num,
                     rect=pymupdf.Rect(b[:4]),
@@ -847,7 +843,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Reference Quality",
-                        comment=f"Reference URL contains chatbot tracking parameter: \"{url_str}\". References must cite original academic sources directly without AI/chatbot tracking parameters.",
+                        comment=f"Remove AI chatbot tracking parameter from reference URL (\"{url_str}\"); cite the original academic source directly.",
                         location=loc,
                         page_num=p_idx + 1,
                         rect=rects[0],
@@ -866,7 +862,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Reference Formatting",
-                        comment=f"Reference entry contains raw HTML/XML markup tags: \"{tag_str}\". The reference list must be in plain text without markup tags.",
+                        comment=f"Remove raw HTML/XML markup tags (\"{tag_str}\") from reference entry; provide plain text only.",
                         location=loc,
                         page_num=p_idx + 1,
                         rect=rects[0],
@@ -887,7 +883,7 @@ class IEEEComplianceChecker:
                             self.violations.append(Violation(
                                 no=len(self.violations) + 1,
                                 category="DOI Format",
-                                comment="Reference uses uppercase \"DOI:\" prefix. IEEE style requires lowercase \"doi: 10.xxxx/...\" without capitalization.",
+                                comment="Standardize DOI prefix to lowercase \"doi: 10.xxxx/...\" without uppercase letters.",
                                 location=loc,
                                 page_num=p_idx + 1,
                                 rect=r,
@@ -907,7 +903,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="DOI Format",
-                        comment=f"Reference contains redundant or doubled DOI prefix: \"{doubled_doi}\". IEEE style prescribes bare \"doi: 10.xxxx/...\" (e.g. use 'doi: 10.1109/...' rather than 'doi: https://doi.org/...').",
+                        comment=f"Standardize DOI prefix: write bare \"doi: 10.xxxx/...\" instead of redundant URL format \"{doubled_doi}\".",
                         location=loc,
                         page_num=p_idx + 1,
                         rect=rects[0],
@@ -933,7 +929,7 @@ class IEEEComplianceChecker:
                     self.violations.append(Violation(
                         no=len(self.violations) + 1,
                         category="Duplicate Reference",
-                        comment=f"References [{n1}] and [{n2}] appear to be duplicate entries for the same work (\"{t1.title()}\"). IEEE style does not allow duplicate entries in the reference list. Please merge them into a single entry and update in-text citations.",
+                        comment=f"Merge duplicate reference entries [{n1}] and [{n2}] for \"{t1.title()}\" into a single entry and update in-text citations.",
                         location=f"References [{n1}] and [{n2}]",
                         page_num=start_page + 1,
                         rect=pymupdf.Rect(0, 0, 100, 20),
@@ -968,7 +964,7 @@ class IEEEComplianceChecker:
             self.violations.append(Violation(
                 no=len(self.violations) + 1,
                 category="Column Balance",
-                comment="The columns on the final page are not balanced: the left column extends significantly lower than the right column. IEEE guidelines require the two columns on the final page to be of approximately equal length (e.g., using \\IEEEtriggeratref or the balance package in LaTeX, or inserting a column break in Word).",
+                comment="Balance columns on the final page to approximately equal length (use a column break in Word or \\IEEEtriggeratref / balance package in LaTeX).",
                 location=f"Page {page_num}, Column Area",
                 page_num=page_num,
                 rect=rect,

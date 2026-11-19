@@ -94,20 +94,38 @@ def group_violations(violations: List[Violation]) -> List[Dict[str, Any]]:
         else:
             snip_text = ""
 
-        # Consolidate comment based on category
+        # Consolidate comment based on category (Action-oriented / Instructive verbs)
         first_comment = items[0].comment
         if category == "Table Style":
-            comment = f"Found {snip_text}. IEEE template prescribes uppercase Roman numerals for table titles: 'TABLE I. TABLE TYPE STYLES' centered above the table."
+            comment = f"Change table numbering to uppercase Roman numerals in ALL CAPS: 'TABLE I. TABLE TYPE STYLES' centered above table ({snip_text}); do not use Arabic numerals."
         elif category == "Figure Citation":
-            comment = f"Found {snip_text}. IEEE rule prescribes: 'Use the abbreviation \"Fig. 1\", even at the beginning of a sentence.' (Do not spell out 'Figure')."
+            comment = f"Replace 'Figure' with the standard abbreviation 'Fig.' ({snip_text}), even at the beginning of a sentence."
         elif category == "Citation Punctuation":
-            comment = f"Found sentence punctuation placed before citation bracket (e.g. {snip_text}). IEEE rule: 'The sentence punctuation follows the bracket [2].' (e.g. use '...word [1].' instead of '...word.[1]')."
+            comment = f"Move sentence punctuation to follow after citation brackets (e.g. {snip_text}). IEEE rule: 'The sentence punctuation follows the bracket [2].' (e.g. write '...word [1].' instead of '...word.[1]')."
         elif category == "Equation Citation":
-            comment = f"Found {snip_text} in middle of sentence. IEEE rule: 'Use \"(1)\", not \"Eq. (1)\" or \"equation (1)\", except at the beginning of a sentence: \"Equation (1) is...\"'"
+            comment = f"Refer to equations simply as '(1)' in mid-sentence ({snip_text}); use 'Equation (1)' only at the beginning of a sentence."
         elif category == "Template Guideline Text":
-            comment = f"Found leftover template placeholder text: {snip_text}. IEEE explicitly states: 'Please ensure that all template text is removed prior to submission.'"
+            comment = f"Remove leftover template placeholder text: {snip_text}. All IEEE template instruction text must be removed prior to camera-ready submission."
         elif category == "Reference Callout":
-            comment = f"Found {snip_text} in middle of sentence. IEEE rule: 'Refer simply to the reference number, as in [3], do not use \"Ref. [3]\" or \"reference [3]\" except at the beginning of a sentence.'"
+            comment = f"Refer directly to citation numbers as '[3]' in mid-sentence ({snip_text}); do not write 'Ref. [3]' or 'reference [3]'."
+        elif category == "Number & Decimal Format":
+            comment = f"Insert a leading zero before decimal points ({snip_text}). IEEE rule: 'Use a zero before decimal points: \"0.25\", not \".25\".'"
+        elif category == "Units Format":
+            comment = f"Use standard metric unit 'cm3' instead of deprecated unit ({snip_text}). IEEE rule: 'Use \"cm3\", not \"cc\".'"
+        elif category == "Author Affiliation":
+            comment = f"Delete template ordinal labels ({snip_text}) from author names."
+        elif category == "Keywords Heading":
+            comment = "Change heading from 'Index Terms' to 'Keywords—' in bold/italic run-in format."
+        elif category == "Abstract Content":
+            comment = f"Remove percent symbols, mathematical equations, or formulas from abstract ({snip_text}); express findings in descriptive plain text."
+        elif category == "DOI Format":
+            comment = f"Standardize DOI prefix to lowercase 'doi: 10.xxxx/...' without capitalization or redundant prefixes ({snip_text})."
+        elif category == "Figure Caption":
+            comment = f"Format figure caption labels as 'Fig. X. Caption text' with a period and space ({snip_text}); remove stray colons."
+        elif category == "Table Citation":
+            comment = f"Cite tables using uppercase Roman numerals ({snip_text}, e.g. 'Table I', 'Table II'); do not use Arabic numbers."
+        elif category == "Revision Markup (Red Font)":
+            comment = f"Convert all red font revision text ({snip_text}) to standard 100% black font."
         else:
             if items[0].snippet and items[0].snippet in first_comment and snip_text:
                 comment = first_comment.replace(f'"{items[0].snippet}"', snip_text)
