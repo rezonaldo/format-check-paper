@@ -22,6 +22,28 @@ def make_imperative_directive(comment: str) -> str:
     # Rule 2: Pattern-specific transformations based on conference compliance standards
     lower = text.lower()
     
+    # Equation formatting & punctuation
+    if "tab" in lower and "where" in lower:
+        return "Remove the tab indentation before 'where'; format the continuation of the equation as flush-left (unindented) text."
+    if "comma" in lower and "equation" in lower:
+        return "Insert a comma after the equation to punctuate the mathematical sentence in accordance with IEEE guidelines."
+    if "punctuation" in lower and "equation" in lower or "period" in lower and "equation" in lower:
+        return "Punctuate equations with a comma or period when part of a sentence in accordance with IEEE guidelines."
+
+    # General 'There should be [a/an] [X]' -> 'Insert [X]'
+    m_should = re.match(r'^There\s+should\s+be\s+(?:a\s+|an\s+)?(.+)', text, re.IGNORECASE)
+    if m_should:
+        target = m_should.group(1).rstrip('.')
+        return f"Insert {target} in accordance with IEEE formatting requirements."
+
+    # General 'There is a [X] before/after [Y]' -> 'Remove [X] before/after [Y]'
+    m_there_is = re.match(r'^There\s+is\s+(?:a\s+|an\s+)?(.+)', text, re.IGNORECASE)
+    if m_there_is:
+        rest = m_there_is.group(1).rstrip('.')
+        if "blank space" in lower:
+            return "Balance columns on the page to approximately equal length; eliminate large blank space by rearranging text or figures."
+        return f"Correct formatting: remove unnecessary {rest}."
+    
     # Page setup (US Letter vs A4)
     if "us letter" in lower and ("a4" in lower or "template" in lower):
         return "Change page setup from US Letter to official IEEE A4 template (210 x 297 mm); regenerate PDF via IEEE PDF eXpress."
@@ -142,6 +164,12 @@ def infer_category(comment: str) -> str:
         return "Caption Formatting"
     if "font" in lower and "size" in lower:
         return "Font Size"
+    if "tab" in lower and "where" in lower:
+        return "Equation Formatting"
+    if "comma" in lower and "equation" in lower or "period" in lower and "equation" in lower or "punctuate" in lower and "equation" in lower:
+        return "Equation Punctuation"
+    if "equation" in lower or "formula" in lower:
+        return "Equation Formatting"
     return "General Format"
 
 def parse_docx_comments(file_bytes: bytes) -> List[Dict[str, Any]]:
@@ -180,58 +208,142 @@ def parse_docx_comments(file_bytes: bytes) -> List[Dict[str, Any]]:
     return comments
 
 def parse_pdf_comments(file_bytes: bytes) -> List[Dict[str, Any]]:
-    """Parses committee comments table from a PDF file using text block analysis."""
+    """
+    Parses committee comments table from a PDF file using high-precision table cell extraction
+    and text block fallbacks. Handles empty 'No' column and embedded formula images.
+    """
     doc = pymupdf.open(stream=file_bytes, filetype="pdf")
+    comments = []
+    
+    # Strategy 1: High-precision table extraction via PyMuPDF find_tables()
+    for page in doc:
+        try:
+            tabs = page.find_tables()
+            for t in tabs:
+                if not t.rows or len(t.rows) < 1:
+                    continue
+                
+                # Determine header column indices
+                no_col, comm_col, loc_col = 0, 1, 2
+                header_names = t.header.names if t.header else []
+                for c_idx, name in enumerate(header_names):
+                    if not name: continue
+                    cl = name.lower()
+                    if "no" in cl: no_col = c_idx
+                    elif "comment" in cl: comm_col = c_idx
+                    elif "location" in cl: loc_col = c_idx
+                
+                for r_idx, row in enumerate(t.rows):
+                    cells = row.cells
+                    if not cells:
+                        continue
+                    
+                    # Extract cell text using clip on bounding box (preserves spacing perfectly)
+                    c_bbox = cells[comm_col] if len(cells) > comm_col else None
+                    l_bbox = cells[loc_col] if len(cells) > loc_col else None
+                    n_bbox = cells[no_col] if len(cells) > no_col else None
+
+                    comm_text = page.get_text("text", clip=c_bbox).strip() if c_bbox else ""
+                    loc_text = page.get_text("text", clip=l_bbox).strip() if l_bbox else ""
+                    no_text = page.get_text("text", clip=n_bbox).strip() if n_bbox else ""
+
+                    # Fallback to row cell text if bounding box had no text
+                    if not comm_text and hasattr(t, "extract"):
+                        raw_ext = t.extract()
+                        if r_idx < len(raw_ext) and len(raw_ext[r_idx]) > comm_col:
+                            comm_text = (raw_ext[r_idx][comm_col] or "").strip()
+
+                    # Check if this row is just the header
+                    if "committee comment" in comm_text.lower() or comm_text.lower() == "format comments":
+                        continue
+
+                    if comm_text and len(comm_text) > 3:
+                        comm_clean = re.sub(r'\s+', ' ', comm_text).strip()
+                        loc_clean = re.sub(r'\s+', ' ', loc_text).strip() or "Entire manuscript"
+                        directive = make_imperative_directive(comm_clean)
+                        cat = infer_category(comm_clean)
+                        
+                        raw_no = no_text.strip() if (no_text and no_text.strip().isdigit()) else str(len(comments) + 1)
+                        comments.append({
+                            "raw_no": raw_no,
+                            "category": cat,
+                            "comment": directive,
+                            "original_comment": comm_clean,
+                            "location": loc_clean,
+                            "source": "Komite"
+                        })
+        except Exception as e:
+            print(f"Warning: find_tables parsing exception: {e}")
+
+    if comments:
+        return comments
+
+    # Strategy 2: Text block analysis (fallback if table lines were not detected)
     full_text = ""
     for page in doc:
         full_text += page.get_text("text") + "\n"
 
-    # Find start after "Authors' Response"
     start_pos = 0
-    m_start = re.search(r"Authors['’]?\s*Response", full_text, re.IGNORECASE)
+    m_start = re.search(r"Authors['’]?\s*Response|Committee\s*Comments", full_text, re.IGNORECASE)
     if m_start:
         start_pos = m_start.end()
         
     body_text = full_text[start_pos:]
     items = re.split(r'\n+(\d+)\s*\n+', "\n" + body_text)
-    comments = []
-    
-    for i in range(1, len(items), 2):
-        item_no = items[i]
-        item_body = items[i+1].strip()
-        lines = [ln.strip() for ln in item_body.split('\n') if ln.strip()]
-        if not lines:
-            continue
-            
-        loc_lines = []
-        comm_lines = []
-        is_loc = True
-        for line in reversed(lines):
-            # Check if line looks like location
-            is_loc_indicator = bool(re.match(r'^(page|pages|entire|table|fig|section|references|pdf metadata|all)', line, re.IGNORECASE) or line.startswith('(') or len(line) < 35)
-            if is_loc and is_loc_indicator:
-                loc_lines.insert(0, line)
-            else:
-                is_loc = False
-                comm_lines.insert(0, line)
+    if len(items) > 1:
+        for i in range(1, len(items), 2):
+            item_no = items[i]
+            item_body = items[i+1].strip()
+            lines = [ln.strip() for ln in item_body.split('\n') if ln.strip()]
+            if not lines:
+                continue
                 
-        comm_text = " ".join(comm_lines).strip()
-        loc_text = " ".join(loc_lines).strip() or "Entire manuscript"
-        
-        # If comm_text was empty because all lines looked like loc
-        if not comm_text and loc_lines:
-            comm_text = " ".join(loc_lines)
-            loc_text = "Entire manuscript"
-            
-        if comm_text and len(comm_text) > 5 and not comm_text.lower().startswith("committee comments"):
-            directive = make_imperative_directive(comm_text)
-            cat = infer_category(comm_text)
+            loc_lines = []
+            comm_lines = []
+            is_loc = True
+            for line in reversed(lines):
+                is_loc_indicator = bool(re.match(r'^(page|pages|entire|table|fig|section|references|pdf metadata|all)', line, re.IGNORECASE) or line.startswith('(') or len(line) < 35)
+                if is_loc and is_loc_indicator:
+                    loc_lines.insert(0, line)
+                else:
+                    is_loc = False
+                    comm_lines.insert(0, line)
+                    
+            comm_text = " ".join(comm_lines).strip()
+            loc_text = " ".join(loc_lines).strip() or "Entire manuscript"
+            if not comm_text and loc_lines:
+                comm_text = " ".join(loc_lines)
+                loc_text = "Entire manuscript"
+                
+            if comm_text and len(comm_text) > 3 and not comm_text.lower().startswith("committee comments"):
+                directive = make_imperative_directive(comm_text)
+                cat = infer_category(comm_text)
+                comments.append({
+                    "raw_no": item_no,
+                    "category": cat,
+                    "comment": directive,
+                    "original_comment": comm_text,
+                    "location": loc_text,
+                    "source": "Komite"
+                })
+        if comments:
+            return comments
+
+    # Strategy 3: Split by non-empty paragraphs
+    paragraphs = [p.strip() for p in re.split(r'\n\s*\n+', body_text) if p.strip()]
+    for p_idx, para in enumerate(paragraphs, start=1):
+        p_clean = re.sub(r'\s+', ' ', para).strip()
+        if p_clean.lower() in ["no", "committee comments", "location in manuscript", "authors' response", "title:", "paper id:"]:
+            continue
+        if len(p_clean) > 5:
+            directive = make_imperative_directive(p_clean)
+            cat = infer_category(p_clean)
             comments.append({
-                "raw_no": item_no,
+                "raw_no": str(p_idx),
                 "category": cat,
                 "comment": directive,
-                "original_comment": comm_text,
-                "location": loc_text,
+                "original_comment": p_clean,
+                "location": "Entire manuscript",
                 "source": "Komite"
             })
             
