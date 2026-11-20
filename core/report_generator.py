@@ -196,11 +196,14 @@ def generate_word_report(
     violations: List[Violation], 
     metadata: PaperMetadata, 
     output_path: str,
-    conference_name: str = "ICoDMI 2026 (SSMI IPB)"
+    conference_name: str = "ICoDMI 2026 (SSMI IPB)",
+    merged_items: Optional[List[Dict[str, Any]]] = None,
+    forensics_data: Optional[Dict[str, Any]] = None
 ) -> str:
     """
     Generates a Microsoft Word (.docx) document with the official consolidated revision table:
     Columns: No | Format Comments | Location in Manuscript | Authors' Response
+    Also appends Reference Integrity & Citation Forensics sheet if forensics findings exist.
     """
     doc = docx.Document()
     
@@ -238,9 +241,9 @@ def generate_word_report(
     meta_p.add_run(f"{metadata.total_pages} pages ({metadata.paper_size_name})\n")
     meta_p.add_run("Total Findings: ").bold = True
     
-    grouped_items = group_violations(violations)
-    run_status = meta_p.add_run(f"{len(violations)} item(s) in {len(grouped_items)} revision item(s)")
-    if len(violations) > 0:
+    items_to_render = merged_items if merged_items is not None else group_violations(violations)
+    run_status = meta_p.add_run(f"{len(items_to_render)} revision directive(s) consolidated from review")
+    if len(items_to_render) > 0:
         run_status.font.color.rgb = RGBColor(180, 40, 40)
         run_status.bold = True
         
@@ -271,7 +274,7 @@ def generate_word_report(
         run.font.color.rgb = RGBColor(30, 30, 30)
         
     # Populate rows using consolidated group data
-    if not grouped_items:
+    if not items_to_render:
         row_cells = table.add_row().cells
         for i in range(4):
             row_cells[i].width = col_widths[i]
@@ -281,7 +284,7 @@ def generate_word_report(
         row_cells[2].paragraphs[0].add_run("-")
         row_cells[3].paragraphs[0].add_run("-")
     else:
-        for idx, g in enumerate(grouped_items, start=1):
+        for idx, g in enumerate(items_to_render, start=1):
             row = table.add_row()
             cells = row.cells
             for i in range(4):
@@ -291,13 +294,21 @@ def generate_word_report(
             # Column 1: No
             p0 = cells[0].paragraphs[0]
             p0.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            r0 = p0.add_run(str(idx))
+            r0 = p0.add_run(str(g.get("no", idx)))
             r0.font.name = "Times New Roman"
             r0.font.size = Pt(9.5)
             
-            # Column 2: Format Comments (Category + Consolidated Explanation)
+            # Column 2: Format Comments (Source + Category + Active Directive)
             p1 = cells[1].paragraphs[0]
             p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            
+            if g.get("source"):
+                r1_src = p1.add_run(f"[{g['source']}] ")
+                r1_src.font.name = "Times New Roman"
+                r1_src.font.size = Pt(8.5)
+                r1_src.font.italic = True
+                r1_src.font.color.rgb = RGBColor(70, 70, 150)
+                
             r1_cat = p1.add_run(f"[{g['category']}] ")
             r1_cat.font.name = "Times New Roman"
             r1_cat.font.size = Pt(9.5)
@@ -307,7 +318,7 @@ def generate_word_report(
             r1_comm.font.name = "Times New Roman"
             r1_comm.font.size = Pt(9.5)
             
-            if g['count'] > 1:
+            if g.get('count', 1) > 1:
                 p1_sub = cells[1].add_paragraph()
                 p1_sub.paragraph_format.space_before = Pt(3)
                 p1_sub.paragraph_format.space_after = Pt(0)
@@ -322,12 +333,12 @@ def generate_word_report(
             p2.alignment = WD_ALIGN_PARAGRAPH.LEFT
             r2 = p2.add_run(g['location'])
             r2.font.name = "Times New Roman"
-            r2.font.size = Pt(9.5)
+            r2.font.size = Pt(9.0)
             
-            # Column 4: Authors' Response (Empty paragraph for author to fill in)
+            # Column 4: Authors' Response (Empty paragraph for author notes)
             p3 = cells[3].paragraphs[0]
             p3.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            p3.paragraph_format.space_after = Pt(24)  # Leave room for author notes
+            p3.paragraph_format.space_after = Pt(18)
             
     # Apply standard table borders
     tblPr = table._tbl.tblPr
@@ -342,6 +353,83 @@ def generate_word_report(
         </w:tblBorders>
     ''')
     tblPr.append(borders)
+
+    # Append Table 2: Reference Integrity & Citation Forensics (if findings exist)
+    if forensics_data and forensics_data.get("findings"):
+        doc.add_page_break()
+        f_p = doc.add_paragraph()
+        f_p.paragraph_format.space_before = Pt(8)
+        f_p.paragraph_format.space_after = Pt(2)
+        run_f_title = f_p.add_run("Reference Integrity & Citation Forensics")
+        run_f_title.font.name = "Times New Roman"
+        run_f_title.font.size = Pt(13)
+        run_f_title.font.bold = True
+        run_f_title.font.color.rgb = RGBColor(180, 40, 40)
+
+        sum_p = doc.add_paragraph()
+        sum_p.paragraph_format.space_after = Pt(10)
+        f_summary = forensics_data.get("summary", {})
+        sum_text = (
+            f"Total References: {f_summary.get('total_references', 0)} • "
+            f"Self-Citations: {f_summary.get('self_citation_count', 0)} ({f_summary.get('self_citation_percentage', 0)}%) • "
+            f"Suspicious/Incomplete Entries: {f_summary.get('suspicious_count', 0)} • "
+            f"Duplicates: {f_summary.get('duplicate_count', 0)}"
+        )
+        r_sum = sum_p.add_run(sum_text)
+        r_sum.font.name = "Times New Roman"
+        r_sum.font.size = Pt(9.5)
+        r_sum.font.italic = True
+
+        f_table = doc.add_table(rows=1, cols=5)
+        f_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        f_table.autofit = False
+
+        f_hdr_cells = f_table.rows[0].cells
+        f_hdr_titles = ["No", "Ref", "Check Type", "Evidence / Issue", "Directive Recommendation"]
+        f_col_widths = [Inches(0.4), Inches(0.7), Inches(1.8), Inches(2.2), Inches(1.7)]
+
+        for i, title in enumerate(f_hdr_titles):
+            cell = f_hdr_cells[i]
+            cell.width = f_col_widths[i]
+            set_cell_background(cell, "FBEAE5")
+            set_cell_margins(cell, top=120, bottom=120, left=100, right=100)
+            p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER if i in [0, 1] else WD_ALIGN_PARAGRAPH.LEFT
+            run = p.add_run(title)
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(9.5)
+            run.font.bold = True
+
+        for f_idx, f_item in enumerate(forensics_data["findings"], start=1):
+            f_row = f_table.add_row().cells
+            for i in range(5):
+                f_row[i].width = f_col_widths[i]
+                set_cell_margins(f_row[i], top=100, bottom=100, left=100, right=100)
+
+            f_row[0].paragraphs[0].add_run(str(f_item.get("no", f_idx))).font.size = Pt(9)
+            f_row[1].paragraphs[0].add_run(str(f_item.get("ref_no", "-"))).font.size = Pt(9)
+
+            p_type = f_row[2].paragraphs[0].add_run(f"[{f_item.get('severity', 'Warning')}]\n{f_item.get('type', '-')}")
+            p_type.font.size = Pt(9)
+            p_type.font.bold = True
+            if f_item.get('severity') == 'Fatal':
+                p_type.font.color.rgb = RGBColor(180, 30, 30)
+
+            f_row[3].paragraphs[0].add_run(f_item.get("evidence", "-")).font.size = Pt(9)
+            f_row[4].paragraphs[0].add_run(f_item.get("recommendation", "-")).font.size = Pt(9)
+
+        f_tblPr = f_table._tbl.tblPr
+        f_borders = parse_xml(f'''
+            <w:tblBorders {nsdecls("w")}>
+                <w:top w:val="single" w:sz="6" w:space="0" w:color="DDAAAA"/>
+                <w:bottom w:val="single" w:sz="6" w:space="0" w:color="DDAAAA"/>
+                <w:left w:val="single" w:sz="6" w:space="0" w:color="DDAAAA"/>
+                <w:right w:val="single" w:sz="6" w:space="0" w:color="DDAAAA"/>
+                <w:insideH w:val="single" w:sz="4" w:space="0" w:color="EEDDDD"/>
+                <w:insideV w:val="single" w:sz="4" w:space="0" w:color="EEDDDD"/>
+            </w:tblBorders>
+        ''')
+        f_tblPr.append(f_borders)
     
     doc.save(output_path)
     return output_path
