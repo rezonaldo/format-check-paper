@@ -651,6 +651,91 @@ class IEEEComplianceChecker:
                 ))
                 break  # match first rect on this page
                 
+        # 1b. Equation Punctuation & Continuation Formatting
+        # IEEE rule: "Equations are punctuated as part of the sentence, so they should be followed by a comma or period."
+        # IEEE rule: "The continuation of an equation (e.g., 'where...') must be flush-left, unindented."
+        try:
+            p_dict = page.get_text("dict")
+            p_blocks = p_dict.get("blocks", [])
+            p_lines = []
+            for pb in p_blocks:
+                if "lines" not in pb:
+                    continue
+                for pl in pb["lines"]:
+                    ltxt = "".join(ps["text"] for ps in pl["spans"]).strip()
+                    lbbox = pl["bbox"]
+                    f_span = pl["spans"][0] if pl["spans"] else None
+                    lx0 = f_span["bbox"][0] if f_span else lbbox[0]
+                    lcol = "Left Column" if lbbox[0] < p_width / 2 else "Right Column"
+                    lmargin = 45.0 if lbbox[0] < p_width / 2 else 306.0
+                    p_lines.append({
+                        "text": ltxt,
+                        "bbox": lbbox,
+                        "x0": lx0,
+                        "col": lcol,
+                        "margin": lmargin,
+                        "y0": lbbox[1]
+                    })
+            
+            p_lines.sort(key=lambda item: (0 if "Left" in item["col"] else 1, item["y0"]))
+            
+            for idx, pl in enumerate(p_lines):
+                m_eq_num = re.search(r'\(([1-9]\d?)\)\s*$', pl["text"])
+                if m_eq_num:
+                    eq_n = m_eq_num.group(1)
+                    eq_rect = pymupdf.Rect(pl["bbox"])
+                    if self._is_in_references(page_num, eq_rect, p_width, ref_info):
+                        continue
+                        
+                    # Inspect next lines in same column within 55 pt for continuation word
+                    for next_pl in p_lines[idx+1 : idx+8]:
+                        if next_pl["col"] != pl["col"]:
+                            break
+                        if next_pl["y0"] - pl["y0"] > 55.0:
+                            break
+                        n_txt = next_pl["text"].strip()
+                        m_continuation = re.match(r'^(?:[\'\"\s]*)(where|here|with)\b', n_txt, re.IGNORECASE)
+                        if m_continuation:
+                            w_clause = m_continuation.group(1)
+                            
+                            # Check comma punctuation
+                            has_eq_comma = False
+                            if idx > 0 and (p_lines[idx-1]["text"].endswith(",") or p_lines[idx-1]["text"].endswith(", ")):
+                                has_eq_comma = True
+                            if pl["text"][:m_eq_num.start()].strip().endswith(","):
+                                has_eq_comma = True
+                                
+                            if not has_eq_comma:
+                                loc_eq = get_location_description(page_num, eq_rect, p_width, p_height)
+                                self.violations.append(Violation(
+                                    no=len(self.violations) + 1,
+                                    category="Equation Punctuation",
+                                    comment=f"Insert a comma after Equation ({eq_n}) to punctuate the mathematical sentence before '{w_clause}' in accordance with IEEE guidelines.",
+                                    location=f"{loc_eq}, Eq. ({eq_n})",
+                                    page_num=page_num,
+                                    rect=eq_rect,
+                                    severity="Warning",
+                                    snippet=f"({eq_n})"
+                                ))
+                                
+                            # Check tab indentation on continuation line (e.g. 'where')
+                            if next_pl["x0"] > next_pl["margin"] + 8.0:
+                                where_rect = pymupdf.Rect(next_pl["bbox"])
+                                loc_where = get_location_description(page_num, where_rect, p_width, p_height)
+                                self.violations.append(Violation(
+                                    no=len(self.violations) + 1,
+                                    category="Equation Formatting",
+                                    comment=f"Remove tab indentation before '{w_clause}'; format continuation of Equation ({eq_n}) as flush-left (unindented) text.",
+                                    location=f"{loc_where}, Eq. ({eq_n})",
+                                    page_num=page_num,
+                                    rect=where_rect,
+                                    severity="Warning",
+                                    snippet=n_txt[:35]
+                                ))
+                            break
+        except Exception:
+            pass
+            
         # 2. Figure Citation Style: "Figure 1" or "fig 1"
         # IEEE rule: "Use the abbreviation 'Fig. 1', even at the beginning of a sentence."
         fig_matches = list(re.finditer(r'\b(Figure\s+\d+|fig\s+\d+)\b', page_text))

@@ -20,7 +20,7 @@ from core.highlighter import annotate_pdf
 from core.report_generator import generate_word_report, group_violations
 from core.validator import validate_pdf_safety, validate_manuscript_eligibility
 from core.lecturer_parser import parse_lecturer_file
-from core.merger import merge_and_deduplicate
+from core.merger import merge_and_deduplicate, resolve_lecturer_locations
 from core.reference_forensics import analyze_reference_forensics
 
 app = FastAPI(title="IEEE Manuscript Compliance Checker API")
@@ -98,7 +98,9 @@ async def check_manuscript(
                 l_bytes = await lecturer_file.read()
                 if len(l_bytes) > 0:
                     lecturer_filename = lecturer_file.filename
-                    lecturer_comments = parse_lecturer_file(l_bytes, lecturer_file.filename)
+                    parsed_raw = parse_lecturer_file(l_bytes, lecturer_file.filename)
+                    # Automatically resolve concrete manuscript locations for items that defaulted to "Entire manuscript"
+                    lecturer_comments = resolve_lecturer_locations(parsed_raw, doc)
             except Exception as e:
                 print(f"Warning: Failed to parse lecturer file: {e}")
 
