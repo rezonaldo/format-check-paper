@@ -1327,13 +1327,20 @@ class IEEEComplianceChecker:
                             ))
                             break
 
-                    m_tbl = re.match(r'^(TABLE\s+[IVXLCDM]+\.?|\bTable\s+[IVXLCDM]+\.?|\bTable\s+\d+\.?)\s*(.+)?', line_text, re.IGNORECASE)
-                    if m_tbl:
+                    # Table titles in IEEE format always begin with uppercase 'TABLE [ROMAN].'
+                    # In-text narrative references like 'Table II: the nugget...' or 'Table 2 shows...' are body text.
+                    m_tbl = re.match(r'^(TABLE\s+[IVXLCDM]+\.?)\s*(.+)?', line_text)
+                    if m_tbl and not line_text.lower().startswith("table type styles"):
                         first_span = l["spans"][0]
                         sz = first_span.get("size", 8.0)
-                        rest = (m_tbl.group(2) or "").lower().strip()
-                        is_callout = any(rest.startswith(w) for w in ["shows", "illustrates", "presents", "summarizes", "depicts", "demonstrates", "is", "was", "are", "were"])
-                        if not is_callout and sz >= 9.5 and not line_text.lower().startswith("table type styles"):
+                        rest = (m_tbl.group(2) or "").strip()
+                        # If rest contains lowercase narrative sentences or is inside a multi-line paragraph block, skip
+                        is_narrative = (
+                            len(b.get("lines", [])) > 2 or 
+                            re.search(r'\b(the|is|are|was|were|meaning|close|observed|shows|presents|summarizes)\b', rest.lower()) or
+                            rest.startswith(":")
+                        )
+                        if not is_narrative and sz >= 9.5:
                             r = pymupdf.Rect(first_span.get("bbox"))
                             loc = get_location_description(p_idx + 1, r, page.rect.width, page.rect.height)
                             self.violations.append(Violation(
