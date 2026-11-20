@@ -197,55 +197,90 @@
                     </div>
                 </div>
 
-                <!-- Stageshow Upload Stage / Dropzone -->
-                <div class="ss-card p-6">
-                    <div id="dropZone" tabindex="0" role="button" aria-label="Area unggah naskah PDF. Klik atau tekan Enter untuk memilih berkas" class="border-2 border-dashed border-slate-300 hover:border-slate-600 focus-visible:border-slate-800 rounded-lg p-8 sm:p-10 text-center transition-all bg-slate-50/70 hover:bg-slate-100/60">
-                        <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden">
+                <!-- Stageshow Dual Upload Stage: Manuscript PDF + Lecturer Review Sheet -->
+                <div class="ss-card p-5 sm:p-6 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         
-                        <div class="max-w-md mx-auto space-y-3">
-                            <div class="mx-auto w-12 h-12 text-slate-700 bg-slate-200/90 rounded-md flex items-center justify-center shadow-xs" aria-hidden="true">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-slate-800">Klik atau seret & lepas berkas PDF naskah di sini</p>
-                                <p class="text-xs text-slate-500 mt-1">Format berkas: .pdf (Batas unggah peramban web: maks. 4.5 MB)</p>
-                            </div>
-
-                            <!-- Selected File Badge / Inspector Row -->
-                            <div id="selectedFileInfo" class="hidden inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-900 text-xs font-medium px-3.5 py-1.5 rounded shadow-xs">
-                                <!-- File details inserted via JavaScript -->
-                            </div>
-
-                            <!-- Large File Advisory Box -->
-                            <div id="largeFileAlert" class="hidden max-w-lg mx-auto bg-amber-50 border border-amber-300 text-amber-900 text-xs p-4 rounded text-left space-y-2 shadow-xs" role="alert">
-                                <div class="font-bold flex items-center gap-2 text-amber-900 text-xs">
-                                    <svg class="w-4 h-4 text-amber-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        <!-- Slot 1: Naskah Paper PDF (Wajib) -->
+                        <div id="dropZone" tabindex="0" role="button" aria-label="Area unggah naskah PDF. Klik atau tekan Enter untuk memilih berkas" class="border-2 border-dashed border-slate-300 hover:border-slate-600 focus-visible:border-slate-800 rounded-lg p-5 sm:p-6 text-center transition-all bg-slate-50/70 hover:bg-slate-100/60 flex flex-col justify-between">
+                            <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden">
+                            
+                            <div class="space-y-2.5">
+                                <div class="mx-auto w-10 h-10 text-slate-700 bg-slate-200/90 rounded-md flex items-center justify-center shadow-xs" aria-hidden="true">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                     </svg>
-                                    <span>Ukuran Berkas Melebihi Batas Web Vercel (Maks. 4.5 MB)</span>
                                 </div>
-                                <p id="largeFileText" class="leading-relaxed text-amber-800 text-xs"></p>
-                                <div class="pt-1 text-[11px] text-amber-900 font-medium">
-                                    <b>Solusi Mudah:</b>
-                                    <ol class="list-decimal list-inside space-y-0.5 mt-1">
-                                        <li>Kompres berkas PDF ini secara gratis di <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-950">ilovepdf.com/compress_pdf</a> menjadi &lt; 4 MB lalu unggah kembali.</li>
-                                        <li>Atau jalankan aplikasi lokal tanpa batas ukuran: klik 2x file <b>Jalankan_IEEE_Checker.bat</b> di folder projek Anda.</li>
-                                    </ol>
+                                <div>
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <p class="text-xs sm:text-sm font-bold text-slate-900">1. Naskah Paper (PDF)</p>
+                                        <span class="text-[10px] font-semibold bg-slate-900 text-white px-1.5 py-0.2 rounded">Wajib</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-0.5">Format berkas: .pdf (Maks. 4.5 MB)</p>
+                                    <p class="text-[11px] text-slate-400">Klik atau seret berkas naskah IEEE ke sini</p>
+                                </div>
+
+                                <!-- Selected PDF Badge -->
+                                <div id="selectedFileInfo" class="hidden inline-flex items-center gap-1.5 bg-white border border-slate-300 text-slate-900 text-xs font-medium px-3 py-1.5 rounded shadow-xs max-w-full truncate">
+                                    <!-- Populated via JS -->
+                                </div>
+
+                                <!-- Large File Alert -->
+                                <div id="largeFileAlert" class="hidden text-left bg-amber-50 border border-amber-300 text-amber-900 text-[11px] p-3 rounded space-y-1.5 shadow-xs" role="alert">
+                                    <div class="font-bold flex items-center gap-1.5 text-amber-900">
+                                        <svg class="w-3.5 h-3.5 text-amber-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        <span>Berkas Melebihi Batas Web Vercel (4.5 MB)</span>
+                                    </div>
+                                    <p id="largeFileText" class="leading-relaxed text-amber-800"></p>
+                                    <div class="pt-0.5 text-[10.5px]">
+                                        <b>Solusi:</b> Kompres di <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-950">ilovepdf.com</a> atau jalankan <b>Jalankan_IEEE_Checker.bat</b>.
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Slot 2: Lembar Review Dosen / Komite (Opsional) -->
+                        <div id="lecturerDropZone" tabindex="0" role="button" aria-label="Area unggah lembar review dosen. Klik atau tekan Enter untuk memilih berkas Word atau PDF" class="border-2 border-dashed border-indigo-200 hover:border-indigo-500 focus-visible:border-indigo-700 rounded-lg p-5 sm:p-6 text-center transition-all bg-indigo-50/40 hover:bg-indigo-50/70 flex flex-col justify-between">
+                            <input type="file" id="lecturerFileInput" accept=".docx,.pdf,.doc,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden">
+                            
+                            <div class="space-y-2.5">
+                                <div class="mx-auto w-10 h-10 text-indigo-700 bg-indigo-100 rounded-md flex items-center justify-center shadow-xs" aria-hidden="true">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <p class="text-xs sm:text-sm font-bold text-slate-900">2. Review Dosen / Komite</p>
+                                        <span class="text-[10px] font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300 px-1.5 py-0.2 rounded">Opsional</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-0.5">Format: .docx atau .pdf (Tabel Telaah Dosen)</p>
+                                    <p class="text-[11px] text-indigo-600 font-medium">Otomatis gabung, hapus duplikat &amp; buat kalimat suruhan</p>
+                                </div>
+
+                                <!-- Selected Lecturer File Badge with Remove button -->
+                                <div id="selectedLecturerFileInfo" class="hidden inline-flex items-center gap-2 bg-white border border-indigo-200 text-indigo-950 text-xs font-medium px-3 py-1.5 rounded shadow-xs max-w-full">
+                                    <svg class="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span id="lecturerFileNameSpan" class="truncate"></span>
+                                    <button type="button" id="btnRemoveLecturerFile" class="text-slate-400 hover:text-red-600 ml-1 p-0.5 rounded transition-colors" title="Batalkan berkas review dosen">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <!-- Action Bar -->
-                    <div class="mt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
-                        <span class="text-xs text-slate-500">Memeriksa struktur kolom, margin, font heading, teks sisa template, dan referensi.</span>
-                        <button id="btnCheck" disabled class="w-full sm:w-auto h-11 px-6 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white disabled:text-slate-400 font-semibold text-xs rounded transition-colors flex items-center justify-center gap-2">
+                    <div class="pt-2 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <span class="text-xs text-slate-500 text-center sm:text-left">
+                            Memeriksa margin, font IEEE, referensi fiktif/self-citation, serta menggabungkan telaah komite menjadi kalimat suruhan aktif.
+                        </span>
+                        <button id="btnCheck" disabled class="w-full sm:w-auto h-11 px-6 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white disabled:text-slate-400 font-semibold text-xs rounded transition-colors flex items-center justify-center gap-2 shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
-                            <span>Periksa Kepatuhan Naskah</span>
+                            <span>Periksa &amp; Gabungkan Telaah</span>
                         </button>
                     </div>
                 </div>
@@ -405,6 +440,20 @@
             <!-- Results Section (Hidden by default) -->
             <div id="resultsSection" class="hidden space-y-6">
 
+                <!-- Lecturer Merge Notification Banner -->
+                <div id="lecturerMergeBanner" class="hidden bg-indigo-50 border border-indigo-200 rounded-lg p-4 sm:p-5 text-xs text-indigo-950 flex items-start gap-3.5 shadow-xs">
+                    <div class="w-8 h-8 rounded bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <div class="font-bold text-sm text-indigo-900 flex flex-wrap items-center gap-2">
+                            <span>Telaah Dosen &amp; Format Sistem Berhasil Digabungkan</span>
+                            <span id="lecturerMergeBadge" class="text-[10px] bg-indigo-200 text-indigo-900 border border-indigo-300 px-2 py-0.5 rounded font-semibold">Terdeduplikasi Otomatis</span>
+                        </div>
+                        <p id="lecturerMergeText" class="text-xs text-indigo-800 leading-relaxed"></p>
+                    </div>
+                </div>
+
                 <!-- Metrics Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div class="ss-card p-4 text-center">
@@ -519,6 +568,82 @@
                     </div>
                 </div>
 
+                <!-- Reference Integrity & Citation Forensics Dedicated Table -->
+                <div id="referenceForensicsCard" class="ss-card overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50/60">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+                                <h3 class="text-sm sm:text-base font-bold text-slate-900">Reference Integrity &amp; Citation Forensics</h3>
+                                <span class="text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded">Tabel Terpisah</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                Forensik integritas daftar rujukan: pelacakan self-citation berlebih, sitasi fiktif/cacat, indikasi prompt chatbot AI, dan singkatan BibTeX.
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <button type="button" id="btnCopyForensicsTableForDocs" class="h-8 px-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 rounded text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-all" title="Copy entire forensics table to paste into Google Docs or Word">
+                                <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                                </svg>
+                                <span id="btnCopyForensicsLabel">Copy Forensics Table for Docs</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Forensics Summary Metrics Bar -->
+                    <div class="p-4 bg-white border-b border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
+                        <div class="p-2.5 rounded bg-slate-50 border border-slate-200">
+                            <div class="text-[11px] text-slate-500 font-semibold uppercase">Total Sitasi</div>
+                            <div id="forensicTotalRefs" class="text-lg font-bold text-slate-900 mt-0.5 font-mono-code">-</div>
+                        </div>
+                        <div class="p-2.5 rounded bg-slate-50 border border-slate-200">
+                            <div class="text-[11px] text-slate-500 font-semibold uppercase">Self-Citations</div>
+                            <div id="forensicSelfCites" class="text-lg font-bold text-slate-900 mt-0.5 font-mono-code">-</div>
+                            <span id="forensicSelfBadge" class="text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-slate-100 text-slate-700 border border-slate-300">Normal</span>
+                        </div>
+                        <div class="p-2.5 rounded bg-slate-50 border border-slate-200">
+                            <div class="text-[11px] text-slate-500 font-semibold uppercase">Anomali / Fiktif</div>
+                            <div id="forensicSuspicious" class="text-lg font-bold text-slate-900 mt-0.5 font-mono-code">0</div>
+                            <span id="forensicSuspiciousBadge" class="text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-emerald-50 text-emerald-800 border border-emerald-200">Bersih</span>
+                        </div>
+                        <div class="p-2.5 rounded bg-slate-50 border border-slate-200">
+                            <div class="text-[11px] text-slate-500 font-semibold uppercase">Duplikasi Sitasi</div>
+                            <div id="forensicDuplicates" class="text-lg font-bold text-slate-900 mt-0.5 font-mono-code">0</div>
+                            <span id="forensicDuplicatesBadge" class="text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-emerald-50 text-emerald-800 border border-emerald-200">Nol</span>
+                        </div>
+                    </div>
+
+                    <!-- Forensics Table Container -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-100 text-slate-700 uppercase tracking-wider text-[11px] font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th scope="col" class="py-2.5 px-3 w-12 text-center">No</th>
+                                    <th scope="col" class="py-2.5 px-3 w-20 text-center">Ref</th>
+                                    <th scope="col" class="py-2.5 px-3.5 w-48">Tipe Temuan</th>
+                                    <th scope="col" class="py-2.5 px-4">Bukti Temuan Sitasi</th>
+                                    <th scope="col" class="py-2.5 px-4 w-60 sm:w-72">Rekomendasi Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forensicsTableBody" class="divide-y divide-slate-100">
+                                <!-- Dynamic rows via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Clean state when no forensic issues -->
+                    <div id="noForensicsMsg" class="hidden p-6 text-center text-slate-600 space-y-1">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-1.5" aria-hidden="true">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <p class="text-xs font-bold text-slate-900">Integritas Sitasi &amp; Daftar Pustaka Valid</p>
+                        <p class="text-[11px] text-slate-500">Tidak terdeteksi sitasi fiktif, link chatbot AI, atau anomali self-citation yang mencurigakan.</p>
+                    </div>
+                </div>
+
             </div>
 
         </main>
@@ -567,6 +692,14 @@
         const selectedFileInfo = document.getElementById('selectedFileInfo');
         const largeFileAlert = document.getElementById('largeFileAlert');
         const largeFileText = document.getElementById('largeFileText');
+
+        // Lecturer File Controls
+        const lecturerDropZone = document.getElementById('lecturerDropZone');
+        const lecturerFileInput = document.getElementById('lecturerFileInput');
+        const selectedLecturerFileInfo = document.getElementById('selectedLecturerFileInfo');
+        const lecturerFileNameSpan = document.getElementById('lecturerFileNameSpan');
+        const btnRemoveLecturerFile = document.getElementById('btnRemoveLecturerFile');
+
         const btnCheck = document.getElementById('btnCheck');
         const loadingSection = document.getElementById('loadingSection');
         const resultsSection = document.getElementById('resultsSection');
@@ -577,12 +710,13 @@
         const errorHint = document.getElementById('errorHint');
         
         let selectedFile = null;
+        let selectedLecturerFile = null;
         let lastResultData = null;
 
-        // Click to browse
+        // PDF Click to browse
         dropZone.addEventListener('click', () => pdfFileInput.click());
 
-        // Keyboard trigger for dropzone
+        // Keyboard trigger for PDF dropzone
         dropZone.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -590,14 +724,14 @@
             }
         });
 
-        // File selection handler
+        // PDF File selection handler
         pdfFileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 handleFileSelect(e.target.files[0]);
             }
         });
 
-        // Drag & Drop handlers
+        // PDF Drag & Drop handlers
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('border-slate-800', 'bg-slate-100');
@@ -614,6 +748,67 @@
                 handleFileSelect(e.dataTransfer.files[0]);
             }
         });
+
+        // Lecturer File Click to browse
+        lecturerDropZone.addEventListener('click', (e) => {
+            if (e.target.closest('#btnRemoveLecturerFile')) return;
+            lecturerFileInput.click();
+        });
+
+        lecturerDropZone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                lecturerFileInput.click();
+            }
+        });
+
+        lecturerFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleLecturerFileSelect(e.target.files[0]);
+            }
+        });
+
+        lecturerDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            lecturerDropZone.classList.add('border-indigo-500', 'bg-indigo-100/50');
+        });
+
+        lecturerDropZone.addEventListener('dragleave', () => {
+            lecturerDropZone.classList.remove('border-indigo-500', 'bg-indigo-100/50');
+        });
+
+        lecturerDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            lecturerDropZone.classList.remove('border-indigo-500', 'bg-indigo-100/50');
+            if (e.dataTransfer.files.length > 0) {
+                handleLecturerFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Remove lecturer file handler
+        btnRemoveLecturerFile.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedLecturerFile = null;
+            lecturerFileInput.value = '';
+            selectedLecturerFileInfo.classList.add('hidden');
+            lecturerFileNameSpan.innerText = '';
+        });
+
+        function handleLecturerFileSelect(file) {
+            const fname = file.name.toLowerCase();
+            if (!fname.endsWith('.docx') && !fname.endsWith('.doc') && !fname.endsWith('.pdf')) {
+                showError(
+                    'Format Lembar Review Tidak Didukung',
+                    'Harap pilih berkas lembar telaah komite/dosen dalam format Word (.docx) atau PDF (.pdf).',
+                    ''
+                );
+                return;
+            }
+            selectedLecturerFile = file;
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            lecturerFileNameSpan.innerText = `${file.name} (${sizeMB} MB)`;
+            selectedLecturerFileInfo.classList.remove('hidden');
+        }
 
         function handleFileSelect(file) {
             errorSection.classList.add('hidden');
@@ -677,9 +872,12 @@
                 return;
             }
 
-            // Prepare Form Data
+            // Prepare Form Data (PDF + optional Lecturer comments file)
             const formData = new FormData();
             formData.append('file', selectedFile);
+            if (selectedLecturerFile) {
+                formData.append('lecturer_file', selectedLecturerFile);
+            }
             formData.append('conf_name', document.getElementById('confName').value);
             formData.append('target_size', document.getElementById('targetSize').value);
             formData.append('min_pages', document.getElementById('minPages').value);
@@ -767,6 +965,19 @@
         function renderResults(data) {
             resultsSection.classList.remove('hidden');
 
+            // Lecturer Merge Status Notification Banner
+            const mergeBanner = document.getElementById('lecturerMergeBanner');
+            const mergeText = document.getElementById('lecturerMergeText');
+            if (data.lecturer_merged) {
+                mergeBanner.classList.remove('hidden');
+                const lCount = data.summary.lecturer_items_count || 0;
+                const sCount = data.summary.total_groups || data.summary.total_violations || 0;
+                const mCount = data.merged_violations ? data.merged_violations.length : 0;
+                mergeText.innerHTML = `Berkas telaah komite (<b>${escapeHtml(data.lecturer_filename || 'Dokumen Review Dosen')}</b>) memuat <b>${lCount} temuan komite</b> berhasil diselaraskan dengan <b>${sCount} temuan sistem</b>. Duplikasi telah disaring dan menghasilkan <b>${mCount} instruksi revisi aktif</b> berformat kalimat suruhan.`;
+            } else {
+                mergeBanner.classList.add('hidden');
+            }
+
             // Set Page Metric
             document.getElementById('resTotalPages').innerText = data.metadata.total_pages + ' Pages';
             const pageBadge = document.getElementById('resPageBadge');
@@ -796,11 +1007,14 @@
             document.getElementById('resFatalCount').innerText = data.summary.fatal_count;
             document.getElementById('resWarningCount').innerText = data.summary.warning_count;
             
-            const totalGroups = data.summary.total_groups || (data.grouped_violations ? data.grouped_violations.length : data.summary.total_violations);
+            const totalGroups = (data.merged_violations && data.merged_violations.length) || (data.grouped_violations && data.grouped_violations.length) || (data.summary.total_groups) || data.summary.total_violations;
             document.getElementById('resTotalViolations').innerText = totalGroups;
 
-            // Render Table Content
+            // Render Main Table Content
             renderTable(data);
+
+            // Render Dedicated Reference Forensics Table
+            renderForensicsTable(data.reference_forensics);
 
             // Smooth scroll to results
             resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -811,15 +1025,23 @@
             tbody.innerHTML = '';
 
             const noMsg = document.getElementById('noViolationsMsg');
-            if (!data.violations || data.violations.length === 0) {
+            const hasViolations = (data.merged_violations && data.merged_violations.length > 0) || 
+                                  (data.grouped_violations && data.grouped_violations.length > 0) || 
+                                  (data.violations && data.violations.length > 0);
+
+            if (!hasViolations) {
                 noMsg.classList.remove('hidden');
                 return;
             }
             noMsg.classList.add('hidden');
 
-            if (currentTableMode === 'grouped' && data.grouped_violations) {
+            if (currentTableMode === 'grouped') {
                 thAuthorResponse.classList.remove('hidden');
-                data.grouped_violations.forEach((g) => {
+                const itemsToRender = (data.merged_violations && data.merged_violations.length > 0) 
+                    ? data.merged_violations 
+                    : (data.grouped_violations || []);
+
+                itemsToRender.forEach((g) => {
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-slate-50 transition-colors align-top';
 
@@ -828,8 +1050,18 @@
                         ? 'bg-red-50 text-red-800 border border-red-200' 
                         : 'bg-amber-50 text-amber-800 border border-amber-200';
 
+                    // Source pill for merged review
+                    let sourcePill = '';
+                    if (g.source_tag === 'Komite & Sistem' || g.source === 'both') {
+                        sourcePill = '<span class="inline-block text-[9.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded mr-1">Komite &amp; Sistem</span>';
+                    } else if (g.source_tag === 'Komite' || g.source === 'lecturer') {
+                        sourcePill = '<span class="inline-block text-[9.5px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.2 rounded mr-1">Komite Dosen</span>';
+                    } else if (g.source_tag === 'Sistem' || g.source === 'system') {
+                        sourcePill = '<span class="inline-block text-[9.5px] font-semibold bg-slate-100 text-slate-700 border border-slate-300 px-1.5 py-0.2 rounded mr-1">Telaah Mandiri</span>';
+                    }
+
                     const countBadge = g.count > 1 
-                        ? `<span class="inline-block text-[10px] font-semibold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded ml-1">${g.count} findings</span>` 
+                        ? `<span class="inline-block text-[10px] font-semibold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded ml-1">${g.count} temuan</span>` 
                         : '';
 
                     let detailsHtml = '';
@@ -837,7 +1069,7 @@
                         const itemsList = g.items.map(it => `<li>• <b>${escapeHtml(it.snippet || 'Item')}</b>: ${escapeHtml(it.location)}</li>`).join('');
                         detailsHtml = `
                             <details class="mt-2 text-[11px] text-slate-500">
-                                <summary class="cursor-pointer text-slate-700 hover:text-slate-900 font-medium select-none">View details of ${g.count} highlight locations ▾</summary>
+                                <summary class="cursor-pointer text-slate-700 hover:text-slate-900 font-medium select-none">Rincian ${g.count} titik koordinat stabilo ▾</summary>
                                 <ul class="mt-1 pl-2 space-y-0.5 text-slate-600 font-mono-code text-[10.5px]">
                                     ${itemsList}
                                 </ul>
@@ -850,9 +1082,12 @@
                         <td class="py-3 px-4">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex-1">
-                                    <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass} mr-1">[${g.category}]</span>
-                                    ${countBadge}
-                                    <div class="text-slate-800 leading-relaxed mt-1">${escapeHtml(g.comment)}</div>
+                                    <div class="flex flex-wrap items-center gap-1 mb-1">
+                                        ${sourcePill}
+                                        <span class="inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${badgeClass}">[${g.category}]</span>
+                                        ${countBadge}
+                                    </div>
+                                    <div class="text-slate-800 leading-relaxed font-normal">${escapeHtml(g.comment)}</div>
                                     ${detailsHtml}
                                 </div>
                                 <button type="button" onclick="copyCellText(this)" data-copy="${escapeHtml(`[${g.category}] ${g.comment}`)}" class="btn-copy-comment shrink-0 p-1.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all flex items-center gap-1" title="Copy this comment only (plain text)">
@@ -910,7 +1145,7 @@
                             <div class="flex items-start justify-between gap-2">
                                 <span class="font-mono-code text-[11px] text-slate-700 leading-relaxed flex-1">${escapeHtml(v.location)}</span>
                                 <button type="button" onclick="copyCellText(this)" data-copy="${escapeHtml(v.location)}" class="btn-copy-loc shrink-0 p-1.5 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all flex items-center gap-1" title="Copy this location only (plain text)">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                     <span class="text-[10px] hidden sm:inline text-slate-500">Copy</span>
                                 </button>
                             </div>
@@ -924,6 +1159,83 @@
                     tbody.appendChild(tr);
                 });
             }
+        }
+
+        // Render Dedicated Reference Integrity & Citation Forensics Table
+        function renderForensicsTable(forensics) {
+            if (!forensics) return;
+            const sum = forensics.summary || {};
+            document.getElementById('forensicTotalRefs').innerText = (sum.total_references || 0) + ' Sitasi';
+            
+            const selfCount = sum.self_citation_count || 0;
+            const selfPct = sum.self_citation_percentage || 0;
+            document.getElementById('forensicSelfCites').innerText = `${selfCount} (${selfPct}%)`;
+            const selfBadge = document.getElementById('forensicSelfBadge');
+            if (selfCount >= 3 || selfPct >= 20.0) {
+                selfBadge.innerText = 'High Self-Citations';
+                selfBadge.className = 'text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-amber-50 text-amber-800 border border-amber-300';
+            } else {
+                selfBadge.innerText = 'Normal';
+                selfBadge.className = 'text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-slate-100 text-slate-700 border border-slate-300';
+            }
+
+            const suspCount = sum.suspicious_count || 0;
+            document.getElementById('forensicSuspicious').innerText = suspCount;
+            const suspBadge = document.getElementById('forensicSuspiciousBadge');
+            if (suspCount > 0) {
+                suspBadge.innerText = `${suspCount} Perlu Ditinjau`;
+                suspBadge.className = 'text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-rose-50 text-rose-800 border border-rose-300';
+            } else {
+                suspBadge.innerText = 'Bersih';
+                suspBadge.className = 'text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-emerald-50 text-emerald-800 border border-emerald-200';
+            }
+
+            const dupCount = sum.duplicate_count || 0;
+            document.getElementById('forensicDuplicates').innerText = dupCount;
+            const dupBadge = document.getElementById('forensicDuplicatesBadge');
+            if (dupCount > 0) {
+                dupBadge.innerText = `${dupCount} Duplikat`;
+                dupBadge.className = 'text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-red-50 text-red-800 border border-red-300';
+            } else {
+                dupBadge.innerText = 'Nol';
+                dupBadge.className = 'text-[10px] font-semibold px-1.5 py-0.2 rounded mt-1 inline-block bg-emerald-50 text-emerald-800 border border-emerald-200';
+            }
+
+            const tbody = document.getElementById('forensicsTableBody');
+            tbody.innerHTML = '';
+            const findings = forensics.findings || [];
+            const noForensicsMsg = document.getElementById('noForensicsMsg');
+
+            if (findings.length === 0) {
+                noForensicsMsg.classList.remove('hidden');
+                return;
+            }
+            noForensicsMsg.classList.add('hidden');
+
+            findings.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors align-top';
+                const isFatal = f.severity === 'Fatal';
+                const sevBadge = isFatal 
+                    ? '<span class="inline-block text-[9.5px] font-semibold bg-red-50 text-red-800 border border-red-200 px-1.5 py-0.2 rounded mr-1">Fatal</span>'
+                    : '<span class="inline-block text-[9.5px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.2 rounded mr-1">Warning</span>';
+
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 text-center font-medium text-slate-500 tabular-nums font-mono-code">${f.no}</td>
+                    <td class="py-2.5 px-3 text-center font-bold text-slate-800 font-mono-code">${escapeHtml(f.ref_no || '-')}</td>
+                    <td class="py-2.5 px-3.5">
+                        <div class="flex items-center gap-1 mb-0.5">${sevBadge}</div>
+                        <span class="font-bold text-slate-800">${escapeHtml(f.type || '-')}</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-slate-700 leading-relaxed font-mono-code text-[11px]">
+                        ${escapeHtml(f.evidence || '-')}
+                    </td>
+                    <td class="py-2.5 px-4 text-slate-800 font-semibold leading-relaxed">
+                        ${escapeHtml(f.recommendation || '-')}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         // Search Filter in Table
@@ -973,13 +1285,15 @@
             }, 1800);
         }
 
-        // One-Click Copy Whole Table for Google Docs / Word
+        // One-Click Copy Whole Main Table for Google Docs / Word
         document.getElementById('btnCopyTableForDocs').addEventListener('click', () => {
             if (!lastResultData) return;
             const btn = document.getElementById('btnCopyTableForDocs');
             const btnLabel = document.getElementById('btnCopyTableLabel');
-            const isGrouped = currentTableMode === 'grouped' && lastResultData.grouped_violations;
-            const items = isGrouped ? lastResultData.grouped_violations : lastResultData.violations;
+            const isGrouped = currentTableMode === 'grouped';
+            const items = isGrouped 
+                ? (lastResultData.merged_violations || lastResultData.grouped_violations || [])
+                : (lastResultData.violations || []);
 
             if (!items || items.length === 0) return;
 
@@ -1039,6 +1353,105 @@
                 setTimeout(() => { btnLabel.innerText = origLabel; }, 2000);
             }
         });
+
+        // One-Click Copy Reference Forensics Table for Google Docs / Word
+        document.getElementById('btnCopyForensicsTableForDocs').addEventListener('click', () => {
+            if (!lastResultData || !lastResultData.reference_forensics) return;
+            const forensics = lastResultData.reference_forensics;
+            const findings = forensics.findings || [];
+            if (findings.length === 0) return;
+
+            const btnLabel = document.getElementById('btnCopyForensicsLabel');
+            const origLabel = btnLabel.innerText;
+
+            let tsv = "No\tRef No\tAnomaly Type\tSeverity\tEvidence\tRecommendation\n";
+            let rowsHtml = "";
+
+            findings.forEach(f => {
+                tsv += `${f.no}\t${f.ref_no}\t${f.type}\t${f.severity}\t${(f.evidence||'').replace(/\t/g, ' ')}\t${(f.recommendation||'').replace(/\t/g, ' ')}\n`;
+                rowsHtml += `<tr>
+                    <td style="text-align: center; padding: 6px 8px; vertical-align: top;">${f.no}</td>
+                    <td style="text-align: center; font-weight: bold; padding: 6px 8px; vertical-align: top;">${escapeHtml(f.ref_no)}</td>
+                    <td style="padding: 6px 8px; vertical-align: top;"><b>[${escapeHtml(f.severity)}]</b> ${escapeHtml(f.type)}</td>
+                    <td style="padding: 6px 8px; vertical-align: top; font-family: monospace;">${escapeHtml(f.evidence)}</td>
+                    <td style="padding: 6px 8px; vertical-align: top; font-weight: 500;">${escapeHtml(f.recommendation)}</td>
+                </tr>`;
+            });
+
+            const cleanHtml = `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 10pt; width: 100%;">
+                <thead>
+                    <tr style="background-color: #fdf2f2;">
+                        <th style="padding: 6px 8px; text-align: center; width: 35px;">No</th>
+                        <th style="padding: 6px 8px; text-align: center; width: 50px;">Ref</th>
+                        <th style="padding: 6px 8px; text-align: left; width: 140px;">Tipe Temuan</th>
+                        <th style="padding: 6px 8px; text-align: left;">Bukti Temuan Sitasi</th>
+                        <th style="padding: 6px 8px; text-align: left; width: 180px;">Rekomendasi Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>`;
+
+            if (navigator.clipboard && window.ClipboardItem) {
+                const blobHtml = new Blob([cleanHtml], { type: 'text/html' });
+                const blobText = new Blob([tsv], { type: 'text/plain' });
+                const data = [new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })];
+                navigator.clipboard.write(data).then(() => {
+                    btnLabel.innerText = "✓ Forensics Copied!";
+                    setTimeout(() => { btnLabel.innerText = origLabel; }, 2000);
+                }).catch(() => {
+                    copyPlainText(tsv, null);
+                    btnLabel.innerText = "✓ Text Copied!";
+                    setTimeout(() => { btnLabel.innerText = origLabel; }, 2000);
+                });
+            } else {
+                copyPlainText(tsv, null);
+                btnLabel.innerText = "✓ Text Copied!";
+                setTimeout(() => { btnLabel.innerText = origLabel; }, 2000);
+            }
+        });
+
+        // Download Base64 Helper
+        function downloadBase64(base64Data, filename, mimeType) {
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        // Download Action Handlers
+        document.getElementById('btnDownloadPdf').addEventListener('click', () => {
+            if (!lastResultData || !lastResultData.annotated_pdf_base64) return;
+            const baseName = selectedFile ? selectedFile.name.replace(/\.pdf$/i, '') : 'manuscript';
+            downloadBase64(lastResultData.annotated_pdf_base64, `${baseName}_annotated.pdf`, 'application/pdf');
+        });
+
+        document.getElementById('btnDownloadWord').addEventListener('click', () => {
+            if (!lastResultData || !lastResultData.word_docx_base64) return;
+            const baseName = selectedFile ? selectedFile.name.replace(/\.pdf$/i, '') : 'manuscript';
+            downloadBase64(
+                lastResultData.word_docx_base64, 
+                `${baseName}_review_sheet.docx`, 
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            );
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         // Download Base64 Helper
         function downloadBase64(base64Data, filename, mimeType) {
