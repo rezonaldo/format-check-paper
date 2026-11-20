@@ -3,41 +3,125 @@ from typing import List, Dict, Any, Tuple, Optional
 import pymupdf
 from difflib import SequenceMatcher
 
+import re
+from typing import List, Dict, Any, Tuple, Optional
+import pymupdf
+from difflib import SequenceMatcher
+
+ACADEMIC_STOPWORDS = {
+    # Title / Research / Scientific domain words
+    "accuracy", "computational", "efficiency", "comparison", "svm", "lstm", "indobert",
+    "indonesian", "railway", "review", "sentiment", "analysis", "study", "evaluation",
+    "using", "based", "approach", "framework", "system", "model", "method", "deep",
+    "learning", "machine", "neural", "network", "networks", "classification", "aspect",
+    "paper", "title", "conference", "ieee", "international", "proceedings", "journal",
+    "decision", "ranking", "sensitivity", "optimization", "perturbation", "pairwise",
+    "spectral", "response", "polyethylene", "microplastics", "salinity", "variations",
+    "excitation", "conditions", "syndrome", "facial", "phenotype", "membership",
+    "function", "construction", "histogram", "interpolation", "fuzzy", "dashboard",
+    "high", "performance", "computing", "characterization", "hybrid", "diabetes",
+    "treatment", "planning", "synthetic", "data", "analytics", "payment", "handling",
+    "imbalanced", "recommender", "systems", "attention", "heads", "resampling",
+    "strategies", "credit", "card", "virtual", "reality", "walking", "tour", "cultural",
+    "heritage", "lightweight", "ensemble", "differential", "search", "algorithm",
+    "reliability", "integrating", "silico", "strain", "geostatistical", "peatland",
+    "soil", "moisture", "feature", "selection", "impact", "arrival", "first", "lane",
+    "airport", "security", "checkpoints", "slot", "median", "demand", "profiles",
+    "investigation", "development", "application", "applications", "modeling", "survey",
+    "implementation", "experimental", "theoretical", "empirical", "numerical",
+    "gas", "chromatography", "mass", "spectrometry", "spectroscopy", "microscopy",
+    "scanning", "electron", "fourier", "transform", "infrared", "raman", "kriging",
+    "variogram", "semivariogram", "regression", "detection", "prediction", "estimator",
+    
+    # Affiliation / Structure / Location words
+    "faculty", "department", "school", "college", "university", "universitas", "institut",
+    "institute", "polytechnic", "center", "centre", "laboratory", "dept", "univ", "program",
+    "study", "engineering", "technology", "science", "sciences", "computer", "informatics",
+    "information", "creative", "electrical", "mechanical", "civil", "medical", "health",
+    "economics", "business", "agriculture", "agricultural", "forestry", "pharmacy",
+    "indonesia", "malaysia", "singapore", "bandung", "jakarta", "bogor", "tasikmalaya",
+    "pontianak", "surabaya", "yogyakarta", "medan", "semarang", "email", "author", "authors",
+    "line", "given", "name", "surname", "member", "student", "lecturer", "professor",
+    "abstract", "keywords", "index", "terms", "introduction", "conclusion", "references",
+    "table", "figure", "fig", "acknowledgment", "acknowledgements"
+}
+
 def extract_paper_authors(doc: pymupdf.Document) -> List[str]:
-    """Extracts author names and surnames from the first page of the manuscript."""
+    """
+    Extracts genuine author names and surnames from the manuscript with high precision.
+    Uses AUTHORS CONTRIBUTIONS section if available, or analyzes the author grid on Page 1.
+    Strictly filters out title words, scientific nouns, and institutional affiliations.
+    """
     if len(doc) == 0:
         return []
+
+    # Strategy 1: Check AUTHORS CONTRIBUTIONS section on last pages (gold standard)
+    for p_idx in range(len(doc) - 1, -1, -1):
+        txt = doc[p_idx].get_text("text")
+        m_contrib = re.search(
+            r'(?:AUTHORS?[\s’\']*CONTRIBUTIONS?)\s*\n+(.*?)(?=\n\s*(?:DATA\s+AVAILABILITY|ACKNOWLEDGMENT|REFERENCES|[A-Z\s]{4,}\b|\Z))', 
+            txt, 
+            re.DOTALL | re.IGNORECASE
+        )
+        if m_contrib:
+            contrib_text = m_contrib.group(1)
+            names = []
+            for chunk in re.split(r'[:;]\s*', contrib_text):
+                for part in re.split(r',\s*|\band\b', chunk):
+                    cleaned = part.strip()
+                    words = cleaned.split()
+                    if 2 <= len(words) <= 4 and all(w[0].isupper() and w.isalpha() for w in words):
+                        if not any(w.lower() in ACADEMIC_STOPWORDS for w in words):
+                            names.append(" ".join(words))
+            if names:
+                return list(dict.fromkeys(names))
+
+    # Strategy 2: Page 1 Author Block Analysis
     p1 = doc[0]
     p_dict = p1.get_text("dict")
     
-    # Author block is typically between Title (y0 ~ 80-180) and Abstract (y0 ~ 220-350)
-    author_text = ""
+    # Identify title font size: max font size on top half of page 1
+    max_font_size = 0
+    for b in p_dict.get("blocks", []):
+        if b.get("bbox", [0, 0, 0, 0])[1] < 350:
+            for l in b.get("lines", []):
+                for s in l.get("spans", []):
+                    if s.get("size", 0) > max_font_size:
+                        max_font_size = s["size"]
+                        
+    author_candidates = []
     for b in p_dict.get("blocks", []):
         bbox = b.get("bbox", [0, 0, 0, 0])
-        if 80 <= bbox[1] <= 300:
+        # Authors are in top half of page, below title and above abstract
+        if 50 <= bbox[1] <= 380:
             for l in b.get("lines", []):
-                line_str = "".join(s.get("text", "") for s in l.get("spans", [])).strip()
-                if "abstract" in line_str.lower():
-                    break
-                # Skip template line instructions like "line 1", "author name"
-                if re.search(r'\b(line\s*\d+|dept\.|faculty|university|institute|email|@)\b', line_str, re.IGNORECASE):
+                line_spans = l.get("spans", [])
+                line_text = "".join(s.get("text", "") for s in line_spans).strip()
+                if not line_text:
                     continue
-                author_text += " " + line_str
+                if "abstract" in line_text.lower():
+                    break
+                    
+                # Skip title lines
+                line_font_size = max([s.get("size", 0) for s in line_spans], default=0)
+                if line_font_size >= max_font_size - 1.0 and max_font_size > 14.0:
+                    continue
+                    
+                # Skip lines containing email, affiliations, digits, or organization keywords
+                if re.search(r'(@|\.ac\.id|\.edu|\.com|\.org|\d{3,}|dept\.|faculty|univers|institut|school|college|laboratory|city|country)', line_text, re.IGNORECASE):
+                    continue
+                    
+                # Strip ordinal labels like '1st', '2nd'
+                cleaned_line = re.sub(r'\b(1st|2nd|3rd|4th|5th|6th)\b', '', line_text).strip()
+                words = cleaned_line.split()
+                
+                # An author name has 2 to 4 capitalized words, with NO academic stopwords
+                if 2 <= len(words) <= 4:
+                    if all(w[0].isupper() and (w.isalpha() or w.endswith('.')) for w in words):
+                        if not any(w.lower() in ACADEMIC_STOPWORDS for w in words):
+                            author_candidates.append(" ".join(words))
 
-    # Extract potential author names (2-4 capitalized words)
-    raw_names = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z]\.|\s+[A-Z][a-z]+){1,3})\b', author_text)
-    authors = []
-    seen = set()
-    for name in raw_names:
-        name_clean = name.strip()
-        # Filter common words
-        if name_clean.lower() in ["paper title", "conference name", "ieee", "table", "figure", "abstract", "index terms", "keywords"]:
-            continue
-        if len(name_clean) > 4 and name_clean.lower() not in seen:
-            seen.add(name_clean.lower())
-            authors.append(name_clean)
-            
-    return authors
+    return list(dict.fromkeys(author_candidates))
 
 def analyze_reference_forensics(doc: pymupdf.Document, ref_info: Optional[dict] = None) -> Dict[str, Any]:
     """
@@ -69,14 +153,18 @@ def analyze_reference_forensics(doc: pymupdf.Document, ref_info: Optional[dict] 
     paper_authors = extract_paper_authors(doc)
     results["summary"]["detected_authors"] = paper_authors
     
-    # Extract author surnames
+    # Extract author surnames (distinctive names only, no common stopwords)
     author_surnames = set()
     for a in paper_authors:
         parts = a.split()
         if parts:
-            author_surnames.add(parts[-1].lower())  # surname
-            if len(parts) > 1 and len(parts[0]) > 2:
-                author_surnames.add(parts[0].lower())
+            surname = parts[-1].lower()
+            if len(surname) >= 3 and surname not in ACADEMIC_STOPWORDS:
+                author_surnames.add(surname)
+            if len(parts) > 1:
+                first = parts[0].lower()
+                if len(first) >= 4 and first not in ACADEMIC_STOPWORDS:
+                    author_surnames.add(first)
 
     # 2. Extract references text
     start_page = (ref_info["page"] - 1) if ref_info else 0
@@ -108,11 +196,20 @@ def analyze_reference_forensics(doc: pymupdf.Document, ref_info: Optional[dict] 
         return results
 
     # A. Check Self-Citations
+    # In standard IEEE references, authors strictly precede the first title quotation mark.
+    # We only inspect the authors segment to prevent false positives against title/journal words.
     self_cited_refs = []
     for num, content in parsed_refs:
+        m_q = re.search(r'[“"\'\`]', content)
+        if m_q:
+            author_segment = content[:m_q.start()]
+        else:
+            parts = content.split(',')
+            author_segment = parts[0] if len(parts) == 1 else ",".join(parts[:2])
+            
         matched_authors = []
         for surname in author_surnames:
-            if len(surname) > 3 and re.search(r'\b' + re.escape(surname) + r'\b', content, re.IGNORECASE):
+            if len(surname) >= 4 and re.search(r'\b' + re.escape(surname) + r'\b', author_segment, re.IGNORECASE):
                 matched_authors.append(surname.title())
         if matched_authors:
             self_cited_refs.append({
@@ -215,15 +312,19 @@ def analyze_reference_forensics(doc: pymupdf.Document, ref_info: Optional[dict] 
             })
             finding_no += 1
 
-        # 6. BibTeX Acronym lowercasing
+        # 6. BibTeX Acronym lowercasing (e.g. 'cnn', 'lstm' in lowercase; 'IoT' is valid mixed case)
         m_title = re.search(r'["“\']([^"”\']+)["”\']', content)
         if m_title:
             t_str = m_title.group(1)
             words = re.findall(r'\b[a-zA-Z-]+\b', t_str)
             corrupted = []
             for w in words:
-                if w.lower() in known_acronyms and not w.isupper():
-                    corrupted.append(w)
+                # 'IoT' is standard casing. Only flag if all-lowercase like 'iot' or 'cnn' or 'bert'
+                if w.lower() in known_acronyms:
+                    if w == "IoT":
+                        continue  # Valid standard IEEE acronym casing
+                    if w.islower() or (not w.isupper() and w.lower() != "iot"):
+                        corrupted.append(w)
             if corrupted:
                 results["findings"].append({
                     "no": finding_no,
