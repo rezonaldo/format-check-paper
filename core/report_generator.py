@@ -113,7 +113,10 @@ def group_violations(violations: List[Violation]) -> List[Dict[str, Any]]:
         elif category == "Units Format":
             comment = f"Use standard metric unit 'cm3' instead of deprecated unit ({snip_text}). IEEE rule: 'Use \"cm3\", not \"cc\".'"
         elif category == "Author Affiliation":
-            comment = f"Delete template ordinal labels ({snip_text}) from author names."
+            if "ordinal" in first_comment.lower() or "1st" in first_comment.lower():
+                comment = f"Delete template ordinal labels ({snip_text}) from author names."
+            else:
+                comment = first_comment
         elif category == "Keywords Heading":
             comment = "Change heading from 'Index Terms' to 'Keywords—' in bold/italic run-in format."
         elif category == "Abstract Content":

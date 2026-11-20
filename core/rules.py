@@ -437,24 +437,9 @@ class IEEEComplianceChecker:
                     ))
                     break
 
-        # 4. Author Block Ordinal Placeholders ("1st Given Name", "2nd Author", etc.)
-        p1_top_text = page.get_text("text")[:1500]
-        for m_ord in re.finditer(r'\b(1st|2nd|3rd|4th|5th|6th)\b(?:\s+(?:Given|Author|Name|[A-Z][a-z]+))?', p1_top_text):
-            ord_str = m_ord.group(0)
-            rects = page.search_for(ord_str)
-            for r in rects:
-                if r.y0 < 320:
-                    self.violations.append(Violation(
-                        no=len(self.violations) + 1,
-                        category="Author Affiliation",
-                        comment=f"Delete template ordinal placeholder \"{ord_str}\" from author names.",
-                        location=get_location_description(1, r, p_width, p_height),
-                        page_num=1,
-                        rect=r,
-                        severity="Warning",
-                        snippet=ord_str
-                    ))
-                    break
+        # 4. Author Block Ordinal Labels ("1st Author", "2nd Author", etc.)
+        # Permissible (sunnah/optional according to conference guidelines); not flagged as a violation.
+        # Literal unedited template placeholder text like "line 1: 1st Given Name Surname" remains covered by TEMPLATE_PLACEHOLDER_PHRASES.
 
         # 5. Keywords Heading check ("Index Terms" vs "Keywords")
         idx_terms_rects = page.search_for("Index Terms")
