@@ -166,21 +166,32 @@ def analyze_reference_forensics(doc: pymupdf.Document, ref_info: Optional[dict] 
                 if len(first) >= 4 and first not in ACADEMIC_STOPWORDS:
                     author_surnames.add(first)
 
-    # 2. Extract references text
-    start_page = (ref_info["page"] - 1) if ref_info else 0
-    if not ref_info:
-        for p_idx in range(len(doc)):
-            txt = doc[p_idx].get_text("text")
-            if re.search(r'\b(REFERENCES|References|DAFTAR PUSTAKA)\b', txt):
-                start_page = p_idx
-                break
-
+    # 2. Extract references text strictly AFTER the 'REFERENCES' / 'DAFTAR PUSTAKA' heading
     ref_text = ""
-    for p_idx in range(start_page, len(doc)):
-        ref_text += doc[p_idx].get_text("text") + "\n"
+    found_heading = False
+    
+    # Identify the starting page containing the REFERENCES heading
+    heading_page_idx = 0
+    for p_idx in range(len(doc) - 1, -1, -1):
+        txt = doc[p_idx].get_text("text")
+        if re.search(r'\b(?:[I|V|X]+\.|\b)\s*(REFERENCES|References|DAFTAR PUSTAKA)\b', txt):
+            heading_page_idx = p_idx
+            break
 
-    # Split into individual reference items [1], [2], ...
-    ref_entries = re.split(r'(?=\[\d+\])', ref_text)
+    for p_idx in range(heading_page_idx, len(doc)):
+        page_txt = doc[p_idx].get_text("text")
+        if not found_heading:
+            m_ref = re.search(r'\b(?:[I|V|X]+\.|\b)\s*(REFERENCES|References|DAFTAR PUSTAKA)\b', page_txt)
+            if m_ref:
+                found_heading = True
+                # Take strictly the text AFTER the heading (avoids ingesting tables/figures/text above REFERENCES on the same page)
+                page_txt = page_txt[m_ref.end():]
+            else:
+                continue
+        ref_text += page_txt + "\n"
+
+    # Split into individual reference items [1], [2], ... strictly at beginning of line
+    ref_entries = re.split(r'\n+\s*(?=\[\d+\])', '\n' + ref_text)
     parsed_refs = []
     
     for entry in ref_entries:
