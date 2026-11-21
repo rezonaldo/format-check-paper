@@ -348,25 +348,69 @@ def analyze_reference_forensics(doc: pymupdf.Document, ref_info: Optional[dict] 
                 finding_no += 1
 
     # C. Duplicate Reference Detection
+    # Two references are duplicates only if:
+    # 1. They have the identical DOI, OR
+    # 2. Their titles are nearly identical AND they share author surnames or publication year
     for i in range(len(parsed_refs)):
         for j in range(i + 1, len(parsed_refs)):
             n1, c1 = parsed_refs[i]
             n2, c2 = parsed_refs[j]
-            # Compare titles if present
-            m1 = re.search(r'["“\']([^"”\']{15,})["”\']', c1)
-            m2 = re.search(r'["“\']([^"”\']{15,})["”\']', c2)
-            if m1 and m2:
-                sim = SequenceMatcher(None, m1.group(1).lower(), m2.group(1).lower()).ratio()
-                if sim > 0.85:
-                    results["findings"].append({
-                        "no": finding_no,
-                        "ref_no": f"[{n1}] & [{n2}]",
-                        "type": "Duplicate Reference Entry",
-                        "severity": "Fatal",
-                        "evidence": f"References [{n1}] and [{n2}] cite the same work: \"{m1.group(1)[:60]}...\"",
-                        "recommendation": f"Merge duplicate entries [{n1}] and [{n2}] into a single entry and update in-text citation numbers."
-                    })
-                    finding_no += 1
-                    results["summary"]["duplicate_count"] += 1
+
+            # 1. DOI Matching
+            m_doi1 = re.search(r'10\.\d{4,9}/[-._;()/:A-Za-z0-9]+', c1)
+            m_doi2 = re.search(r'10\.\d{4,9}/[-._;()/:A-Za-z0-9]+', c2)
+            doi1 = m_doi1.group(0).lower().rstrip('.') if m_doi1 else ""
+            doi2 = m_doi2.group(0).lower().rstrip('.') if m_doi2 else ""
+            
+            is_dup = False
+            dup_title = ""
+            if doi1 and doi2 and doi1 == doi2:
+                is_dup = True
+                dup_title = f"DOI {doi1}"
+            else:
+                m1 = re.search(r'["“\']([^"”\']{15,})["”\']', c1)
+                m2 = re.search(r'["“\']([^"”\']{15,})["”\']', c2)
+                if m1 and m2:
+                    t1_raw = m1.group(1)
+                    t2_raw = m2.group(1)
+                    t1_clean = re.sub(r'[^a-z0-9\s]', '', t1_raw.lower()).strip()
+                    t2_clean = re.sub(r'[^a-z0-9\s]', '', t2_raw.lower()).strip()
+                    sim = SequenceMatcher(None, t1_clean, t2_clean).ratio()
+
+                    if sim >= 0.88:
+                        # Extract author segments and years
+                        def _get_authors_and_year(entry_text):
+                            m_q = re.search(r'[“"\'\`]', entry_text)
+                            a_str = entry_text[:m_q.start()] if m_q else entry_text[:60]
+                            surnames = set(re.findall(r'\b[A-Z][a-z]+\b', a_str))
+                            m_yr = re.search(r'\b(19\d\d|20[0-2]\d)\b', entry_text)
+                            yr = m_yr.group(1) if m_yr else ""
+                            return surnames, yr
+
+                        surnames1, yr1 = _get_authors_and_year(c1)
+                        surnames2, yr2 = _get_authors_and_year(c2)
+                        common_authors = surnames1.intersection(surnames2)
+                        same_year = bool(yr1 and yr2 and abs(int(yr1) - int(yr2)) <= 1)
+
+                        # True duplicate: either identical title (>95%) with author/year match,
+                        # or high similarity (>88%) with both common authors and year match
+                        if sim >= 0.96 and (common_authors or same_year or sim >= 0.98):
+                            is_dup = True
+                            dup_title = f'"{t1_raw[:60]}..."'
+                        elif sim >= 0.88 and common_authors and same_year:
+                            is_dup = True
+                            dup_title = f'"{t1_raw[:60]}..."'
+
+            if is_dup:
+                results["findings"].append({
+                    "no": finding_no,
+                    "ref_no": f"[{n1}] & [{n2}]",
+                    "type": "Duplicate Reference Entry",
+                    "severity": "Fatal",
+                    "evidence": f"References [{n1}] and [{n2}] cite the same work: {dup_title}",
+                    "recommendation": f"Merge duplicate entries [{n1}] and [{n2}] into a single entry and update in-text citation numbers."
+                })
+                finding_no += 1
+                results["summary"]["duplicate_count"] += 1
 
     return results
