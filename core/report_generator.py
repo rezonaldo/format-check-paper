@@ -14,6 +14,15 @@ from openpyxl.utils import get_column_letter
 
 from .models import Violation, PaperMetadata
 
+def sanitize_for_xml(text: Any) -> str:
+    """Removes invalid XML 1.0 control characters that crash python-docx/lxml."""
+    if text is None:
+        return ""
+    if not isinstance(text, str):
+        text = str(text)
+    # Remove NULL bytes and ASCII control characters (0x00-0x08, 0x0B-0x0C, 0x0E-0x1F, 0x7F)
+    return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
+
 def set_cell_background(cell, fill_hex):
     """Sets background color of a Word table cell."""
     tcPr = cell._tc.get_or_add_tcPr()
@@ -306,18 +315,18 @@ def generate_word_report(
             p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
             
             if g.get("source"):
-                r1_src = p1.add_run(f"[{g['source']}] ")
+                r1_src = p1.add_run(sanitize_for_xml(f"[{g['source']}] "))
                 r1_src.font.name = "Times New Roman"
                 r1_src.font.size = Pt(8.5)
                 r1_src.font.italic = True
                 r1_src.font.color.rgb = RGBColor(70, 70, 150)
                 
-            r1_cat = p1.add_run(f"[{g['category']}] ")
+            r1_cat = p1.add_run(sanitize_for_xml(f"[{g['category']}] "))
             r1_cat.font.name = "Times New Roman"
             r1_cat.font.size = Pt(9.5)
             r1_cat.font.bold = True
             
-            r1_comm = p1.add_run(g['comment'])
+            r1_comm = p1.add_run(sanitize_for_xml(g.get('comment', '')))
             r1_comm.font.name = "Times New Roman"
             r1_comm.font.size = Pt(9.5)
             
@@ -334,7 +343,7 @@ def generate_word_report(
             # Column 3: Location in Manuscript
             p2 = cells[2].paragraphs[0]
             p2.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            r2 = p2.add_run(g['location'])
+            r2 = p2.add_run(sanitize_for_xml(g.get('location', '')))
             r2.font.name = "Times New Roman"
             r2.font.size = Pt(9.0)
             
@@ -412,14 +421,14 @@ def generate_word_report(
             f_row[0].paragraphs[0].add_run(str(f_item.get("no", f_idx))).font.size = Pt(9)
             f_row[1].paragraphs[0].add_run(str(f_item.get("ref_no", "-"))).font.size = Pt(9)
 
-            p_type = f_row[2].paragraphs[0].add_run(f"[{f_item.get('severity', 'Warning')}]\n{f_item.get('type', '-')}")
+            p_type = f_row[2].paragraphs[0].add_run(sanitize_for_xml(f"[{f_item.get('severity', 'Warning')}]\n{f_item.get('type', '-')}"))
             p_type.font.size = Pt(9)
             p_type.font.bold = True
             if f_item.get('severity') == 'Fatal':
                 p_type.font.color.rgb = RGBColor(180, 30, 30)
 
-            f_row[3].paragraphs[0].add_run(f_item.get("evidence", "-")).font.size = Pt(9)
-            f_row[4].paragraphs[0].add_run(f_item.get("recommendation", "-")).font.size = Pt(9)
+            f_row[3].paragraphs[0].add_run(sanitize_for_xml(f_item.get("evidence", "-"))).font.size = Pt(9)
+            f_row[4].paragraphs[0].add_run(sanitize_for_xml(f_item.get("recommendation", "-"))).font.size = Pt(9)
 
         f_tblPr = f_table._tbl.tblPr
         f_borders = parse_xml(f'''

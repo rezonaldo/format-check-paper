@@ -17,7 +17,7 @@ import pymupdf
 
 from core.rules import IEEEComplianceChecker
 from core.highlighter import annotate_pdf
-from core.report_generator import generate_word_report, group_violations
+from core.report_generator import generate_word_report, group_violations, sanitize_for_xml
 from core.validator import validate_pdf_safety, validate_manuscript_eligibility
 from core.lecturer_parser import parse_lecturer_file
 from core.merger import merge_and_deduplicate, resolve_lecturer_locations
@@ -110,6 +110,20 @@ async def check_manuscript(
         # 5. Reference Forensics & Integrity Check (Self-citations, dummy, AI links, etc.)
         ref_info = getattr(checker, 'ref_info', None)
         forensics_data = analyze_reference_forensics(doc, ref_info)
+        
+        # Sanitize all strings against invalid XML control characters that crash python-docx/lxml
+        for v in violations:
+            v.comment = sanitize_for_xml(v.comment)
+            v.location = sanitize_for_xml(v.location)
+            v.snippet = sanitize_for_xml(v.snippet)
+        for g in merged_data:
+            g["comment"] = sanitize_for_xml(g.get("comment", ""))
+            g["location"] = sanitize_for_xml(g.get("location", ""))
+            g["category"] = sanitize_for_xml(g.get("category", ""))
+        if forensics_data and "findings" in forensics_data:
+            for f in forensics_data["findings"]:
+                f["evidence"] = sanitize_for_xml(f.get("evidence", ""))
+                f["recommendation"] = sanitize_for_xml(f.get("recommendation", ""))
         
         # Annotate PDF (Auto-stabilo)
         temp_annot_path = os.path.join(os.environ.get("TEMP", "/tmp"), f"annot_{os.urandom(8).hex()}.pdf")
